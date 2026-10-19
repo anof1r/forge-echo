@@ -1,0 +1,276 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ForgeApi } from '../../core/forge-api';
+import { LibraryStore } from '../../core/library-store';
+import { Binding, StageState, Track } from '../../core/models';
+import { StageStateService } from '../../core/stage-state.service';
+import { LibraryPage } from './library-page';
+
+const track = (id: string, overrides: Partial<Track> = {}): Track => ({
+  id, name: `Track ${id}`, kind: 'ambient', file: `tracks/${id}.mp3`, mimeType: 'audio/mpeg', sizeBytes: 1,
+  startMs: 0, endMs: null, volume: 1, loop: true, createdAt: 1, updatedAt: 1, ...overrides,
+});
+const binding = (slideId: string, trackId: string): Binding => ({
+  slideId, trackId, fadeInMs: 2000, fadeOutMs: 3000, volume: 1, updatedAt: 1,
+});
+
+describe('LibraryPage', () => {
+  let store: {
+    tracks: ReturnType<typeof signal<Track[]>>;
+    bindings: ReturnType<typeof signal<Binding[]>>;
+    error: ReturnType<typeof signal<string | null>>;
+    refresh: ReturnType<typeof vi.fn>;
+    upload: ReturnType<typeof vi.fn>;
+    patch: ReturnType<typeof vi.fn>;
+    remove: ReturnType<typeof vi.fn>;
+    bind: ReturnType<typeof vi.fn>;
+    unbind: ReturnType<typeof vi.fn>;
+  };
+  let element: HTMLElement;
+  let fixture: ReturnType<typeof TestBed.createComponent<LibraryPage>>;
+
+  const stage: StageState = {
+    connection: 'connected',
+    contract: 'compatible',
+    presentation: { mode: 'story', activeSlideId: 's1' },
+    slides: [{ id: 's1', name: 'Tavern', order: 0, mediaPath: '/media/slides/aa.webp?v=1' }],
+  };
+
+  const render = (): void => {
+    fixture = TestBed.createComponent(LibraryPage);
+    fixture.detectChanges();
+    element = fixture.nativeElement as HTMLElement;
+  };
+
+  beforeEach(() => {
+    store = {
+      tracks: signal([track('t1'), track('shot', { kind: 'oneshot', loop: false, name: 'Door' })]),
+      bindings: signal([binding('s1', 't1')]),
+      error: signal<string | null>(null),
+      refresh: vi.fn().mockResolvedValue(undefined),
+      upload: vi.fn().mockResolvedValue(undefined),
+      patch: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      bind: vi.fn().mockResolvedValue(undefined),
+      unbind: vi.fn().mockResolvedValue(undefined),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: LibraryStore, useValue: store },
+        { provide: StageStateService, useValue: { state: signal(stage) } },
+        {
+          provide: ForgeApi,
+          useValue: { streamUrl: (id: string) => `/api/tracks/${id}/stream`, slideImageUrl: () => '/img.webp' },
+        },
+      ],
+    });
+  });
+
+  it('loads the library when opened', () => {
+    // Arrange - providers are set
+
+    // Act
+    render();
+
+    // Assert
+    expect(store.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists every track with its name', () => {
+    // Arrange - providers are set
+
+    // Act
+    render();
+
+    // Assert
+    const names = Array.from(element.querySelectorAll<HTMLInputElement>('[data-test="track-name"]')).map((input) => input.value);
+    expect(names).toEqual(['Track t1', 'Door']);
+  });
+
+  it('uploads the chosen file with the selected kind', () => {
+    // Arrange
+    render();
+    const kind = element.querySelector<HTMLSelectElement>('[data-test="upload-kind"]') as HTMLSelectElement;
+    kind.value = 'oneshot';
+    kind.dispatchEvent(new Event('change'));
+    const input = element.querySelector<HTMLInputElement>('[data-test="upload-file"]') as HTMLInputElement;
+    const file = new File(['abc'], 'door.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+
+    // Act
+    input.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.upload).toHaveBeenCalledWith(file, 'oneshot');
+  });
+
+  it('renames a track when the name changes', () => {
+    // Arrange
+    render();
+    const input = element.querySelector<HTMLInputElement>('[data-test="track-name"]') as HTMLInputElement;
+    input.value = '  Rainy tavern ';
+
+    // Act
+    input.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.patch).toHaveBeenCalledWith('t1', { name: 'Rainy tavern' });
+  });
+
+  it('does not rename to an empty name', () => {
+    // Arrange
+    render();
+    const input = element.querySelector<HTMLInputElement>('[data-test="track-name"]') as HTMLInputElement;
+    input.value = '   ';
+
+    // Act
+    input.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.patch).not.toHaveBeenCalled();
+    expect(input.value).toBe('Track t1');
+  });
+
+  it('saves trim marks converted from seconds to milliseconds', () => {
+    // Arrange
+    render();
+    const start = element.querySelector<HTMLInputElement>('[data-test="trim-start"]') as HTMLInputElement;
+    const end = element.querySelector<HTMLInputElement>('[data-test="trim-end"]') as HTMLInputElement;
+    start.value = '1.5';
+    end.value = '42';
+
+    // Act
+    (element.querySelector('[data-test="trim-save"]') as HTMLButtonElement).click();
+
+    // Assert
+    expect(store.patch).toHaveBeenCalledWith('t1', { startMs: 1500, endMs: 42000 });
+  });
+
+  it('treats an empty trim end as play to the end of the file', () => {
+    // Arrange
+    render();
+    (element.querySelector('[data-test="trim-start"]') as HTMLInputElement).value = '0';
+    (element.querySelector('[data-test="trim-end"]') as HTMLInputElement).value = '';
+
+    // Act
+    (element.querySelector('[data-test="trim-save"]') as HTMLButtonElement).click();
+
+    // Assert
+    expect(store.patch).toHaveBeenCalledWith('t1', { startMs: 0, endMs: null });
+  });
+
+  it('requires a second tap to delete a track', () => {
+    // Arrange
+    render();
+    const button = (): HTMLButtonElement => element.querySelector('[data-test="track-delete"]') as HTMLButtonElement;
+
+    // Act
+    button().click();
+    fixture.detectChanges();
+    const afterFirst = store.remove.mock.calls.length;
+    button().click();
+
+    // Assert
+    expect(afterFirst).toBe(0);
+    expect(store.remove).toHaveBeenCalledWith('t1');
+  });
+
+  it('shows the slide and the track currently bound to it', () => {
+    // Arrange - providers are set
+
+    // Act
+    render();
+
+    // Assert
+    const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
+    expect(select.value).toBe('t1');
+    expect(element.querySelector('[data-test="binding-s1"]')?.textContent).toContain('Tavern');
+  });
+
+  it('offers only ambient tracks for binding', () => {
+    // Arrange
+    render();
+
+    // Act
+    const options = Array.from(element.querySelectorAll<HTMLOptionElement>('[data-test="bind-s1"] option')).map((o) => o.value);
+
+    // Assert
+    expect(options).toEqual(['', 't1']);
+  });
+
+  it('binds the chosen track to a slide', () => {
+    // Arrange
+    store.bindings.set([]);
+    render();
+    const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
+    select.value = 't1';
+
+    // Act
+    select.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.bind).toHaveBeenCalledWith('s1', { trackId: 't1' });
+  });
+
+  it('keeps the existing fades when the track of a binding changes', () => {
+    // Arrange
+    store.tracks.update((tracks) => [...tracks, track('t3')]);
+    render();
+    const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
+    select.value = 't3';
+
+    // Act
+    select.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.bind).toHaveBeenCalledWith('s1', { trackId: 't3', fadeInMs: 2000, fadeOutMs: 3000, volume: 1 });
+  });
+
+  it('removes the binding when no track is chosen', () => {
+    // Arrange
+    render();
+    const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
+    select.value = '';
+
+    // Act
+    select.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.unbind).toHaveBeenCalledWith('s1');
+  });
+
+  it('lets the battle screen have its own binding', () => {
+    // Arrange
+    render();
+
+    // Act
+    const battle = element.querySelector('[data-test="bind-battle"]');
+
+    // Assert
+    expect(battle).not.toBeNull();
+  });
+
+  it('updates fade times in seconds', () => {
+    // Arrange
+    render();
+    const fade = element.querySelector<HTMLInputElement>('[data-test="fade-in-s1"]') as HTMLInputElement;
+    fade.value = '4';
+
+    // Act
+    fade.dispatchEvent(new Event('change'));
+
+    // Assert
+    expect(store.bind).toHaveBeenCalledWith('s1', { trackId: 't1', fadeInMs: 4000, fadeOutMs: 3000, volume: 1 });
+  });
+
+  it('shows a store error', () => {
+    // Arrange
+    store.error.set('Request failed.');
+
+    // Act
+    render();
+
+    // Assert
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain('Request failed.');
+  });
+});

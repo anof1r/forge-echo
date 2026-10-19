@@ -1,0 +1,48 @@
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
+
+.app-header {
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-5) var(--space-2);
+
+  &__brand {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+}
+
+.app-main {
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+
+// Tabs sit at the bottom so they stay in thumb reach on phones and tablets.
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+
+  &__link {
+    min-height: 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    transition: color var(--motion-fast) var(--ease);
+
+    &--active {
+      color: var(--accent);
+    }
+  }
+}

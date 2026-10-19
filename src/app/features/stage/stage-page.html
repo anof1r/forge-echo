@@ -1,0 +1,88 @@
+@if (!playback.started()) {
+  <section class="start">
+    <app-icon class="start__icon" name="stage" />
+    <h1>Stage</h1>
+    <p class="muted">Browsers only allow sound after a tap. Start the session once, then the sound follows the scenes.</p>
+    <button type="button" class="start__button" data-test="start-session" (click)="playback.startSession()">
+      Start session
+    </button>
+  </section>
+} @else {
+  <section class="stage">
+    <div class="statuses">
+      <p class="status" data-test="connection" [class.status--offline]="!battleForgeOnline()">
+        <span class="status__dot"></span>
+        {{ battleForgeOnline() ? 'Battle Forge connected' : 'Battle Forge offline' }}
+      </p>
+      @if (stage.state().contract === 'incompatible') {
+        <p class="status status--offline" data-test="contract-warning">
+          <span class="status__dot"></span>
+          This Battle Forge version speaks a different contract. Please update Forge Echo or Battle Forge.
+        </p>
+      }
+    </div>
+
+    <article class="now" data-test="now-playing">
+      @if (currentSlide(); as slide) {
+        <div class="slide" data-test="current-slide">
+          <img class="slide__thumb" alt="" [src]="slide.imageUrl" />
+          <span class="slide__name">{{ slide.name }}</span>
+        </div>
+      }
+      <p class="label">Now playing</p>
+      <p class="title">{{ playback.nowPlaying()?.name ?? 'Silence' }}</p>
+    </article>
+
+    <section class="controls">
+      <app-mode-toggle
+        data-test="mode"
+        label="Playback mode"
+        [options]="modes"
+        [value]="playback.manual() ? 'manual' : 'auto'"
+        (valueChange)="setMode($event)"
+      />
+      <div class="controls__volume">
+        <app-intensity-slider
+          class="controls__slider"
+          data-test="master-volume"
+          label="Volume"
+          [value]="playback.masterVolume()"
+          (valueChange)="playback.setMasterVolume($event)"
+        />
+        <app-icon-button data-test="stop" icon="stop" label="Stop" (click)="playback.stopAmbient()" />
+      </div>
+    </section>
+
+    <section class="group">
+      <h2 class="label"><app-icon name="effects" /> One-shots</h2>
+      <div class="pads">
+        @for (track of oneShots(); track track.id) {
+          <button type="button" class="pad" [attr.data-test]="'oneshot-' + track.id" (click)="playback.playOneShot(track)">
+            {{ track.name }}
+          </button>
+        } @empty {
+          <p class="muted">Add one-shot sounds in the Library tab.</p>
+        }
+      </div>
+    </section>
+
+    <section class="group">
+      <h2 class="label"><app-icon name="volume" /> Ambient</h2>
+      <div class="list">
+        @for (track of ambient(); track track.id) {
+          <button
+            type="button"
+            class="item"
+            [class.item--active]="playback.nowPlaying()?.id === track.id"
+            [attr.data-test]="'ambient-' + track.id"
+            (click)="playAmbient(track)"
+          >
+            {{ track.name }}
+          </button>
+        } @empty {
+          <p class="muted">Add ambient tracks in the Library tab.</p>
+        }
+      </div>
+    </section>
+  </section>
+}

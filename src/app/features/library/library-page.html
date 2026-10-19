@@ -1,0 +1,137 @@
+<section class="page">
+  <h1>Library</h1>
+
+  @if (store.error(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  <section class="card">
+    <h2>Add sound</h2>
+    <div class="row">
+      <label>
+        Type
+        <select data-test="upload-kind" (change)="setUploadKind($event)">
+          <option value="ambient">Ambient (loops)</option>
+          <option value="oneshot">One-shot</option>
+        </select>
+      </label>
+      <label class="file">
+        Choose audio files
+        <input data-test="upload-file" type="file" accept="audio/*" multiple (change)="upload($event)" />
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tracks</h2>
+    @for (track of store.tracks(); track track.id) {
+      <article class="card" [attr.data-test]="'track-' + track.id">
+        <div class="row">
+          <input
+            class="grow"
+            data-test="track-name"
+            aria-label="Track name"
+            maxlength="80"
+            [value]="track.name"
+            (change)="rename(track, $event)"
+          />
+          <span class="badge">{{ track.kind === 'ambient' ? 'Ambient' : 'One-shot' }}</span>
+        </div>
+
+        <audio #preview controls preload="none" [src]="api.streamUrl(track.id)"></audio>
+
+        <div class="row">
+          <label>
+            Start (s)
+            <input #start data-test="trim-start" type="number" min="0" step="0.1" [value]="track.startMs / 1000" />
+          </label>
+          <button type="button" (click)="useCurrentPosition(start, preview)">Use position</button>
+        </div>
+        <div class="row">
+          <label>
+            End (s)
+            <input
+              #end
+              data-test="trim-end"
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder="end of file"
+              [value]="track.endMs === null ? '' : track.endMs / 1000"
+            />
+          </label>
+          <button type="button" (click)="useCurrentPosition(end, preview)">Use position</button>
+        </div>
+        <button type="button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
+
+        <div class="row">
+          <label class="grow">
+            Volume
+            <input type="range" min="0" max="100" [value]="track.volume * 100" (change)="setVolume(track, $event)" />
+          </label>
+          @if (track.kind === 'ambient') {
+            <label class="check">
+              <input type="checkbox" [checked]="track.loop" (change)="setLoop(track, $event)" />
+              Loop
+            </label>
+          }
+        </div>
+
+        <button type="button" class="danger" data-test="track-delete" (click)="requestDelete(track)">
+          {{ pendingDelete() === track.id ? 'Tap again to delete' : 'Delete' }}
+        </button>
+      </article>
+    } @empty {
+      <p class="muted">No sounds yet. Add your first track above.</p>
+    }
+  </section>
+
+  <section>
+    <h2>Scene sounds</h2>
+    <p class="muted">A slide without a sound keeps the previous track playing.</p>
+    @for (target of targets(); track target.key) {
+      <article class="card" [attr.data-test]="'binding-' + target.key">
+        <div class="row">
+          @if (target.imageUrl) {
+            <img class="thumb" alt="" [src]="target.imageUrl" />
+          }
+          <strong class="grow">{{ target.name }}</strong>
+        </div>
+        <select [attr.data-test]="'bind-' + target.key" [attr.aria-label]="'Sound for ' + target.name" (change)="changeBinding(target.key, $event)">
+          <option value="" [selected]="!bindingFor(target.key)">Keep previous</option>
+          @for (track of ambientTracks(); track track.id) {
+            <option [value]="track.id" [selected]="bindingFor(target.key)?.trackId === track.id">{{ track.name }}</option>
+          }
+        </select>
+        @if (bindingFor(target.key); as binding) {
+          <div class="row">
+            <label>
+              Fade in (s)
+              <input
+                [attr.data-test]="'fade-in-' + target.key"
+                type="number"
+                min="0"
+                max="30"
+                step="0.5"
+                [value]="binding.fadeInMs / 1000"
+                (change)="changeFade(target.key, 'fadeInMs', $event)"
+              />
+            </label>
+            <label>
+              Fade out (s)
+              <input
+                [attr.data-test]="'fade-out-' + target.key"
+                type="number"
+                min="0"
+                max="30"
+                step="0.5"
+                [value]="binding.fadeOutMs / 1000"
+                (change)="changeFade(target.key, 'fadeOutMs', $event)"
+              />
+            </label>
+          </div>
+        }
+      </article>
+    }
+  </section>
+</section>

@@ -1,0 +1,104 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.card {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.grow {
+  flex: 1 1 8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+input,
+select,
+button {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+input[type='range'] {
+  padding: 0;
+}
+
+button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1209;
+  font-weight: 600;
+}
+
+button.danger {
+  background: transparent;
+  color: #ff8a80;
+  border-color: #ff8a80;
+}
+
+audio {
+  width: 100%;
+}
+
+.badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--border);
+  font-size: 0.75rem;
+}
+
+.thumb {
+  width: 4rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.alert {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: #4a1f1b;
+  color: #ffb4a9;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

@@ -1,0 +1,73 @@
+:root {
+  color-scheme: dark;
+
+  /* Palette: warm ink surfaces, one ember accent, nothing else competes with the content. */
+  --ink: #14110f;
+  --surface: #1b1714;
+  --surface-raised: #25201b;
+  --line: #342c26;
+  --text: #f1e8de;
+  --text-muted: #9c8f82;
+  --accent: #f0a04b;
+  --accent-dim: #a8692a;
+  --accent-glow: rgba(240, 160, 75, 0.35);
+  --ok: #8bd18b;
+  --warn: #ffb4a9;
+
+  /* Legacy aliases used by the Library page. */
+  --bg: var(--ink);
+  --border: var(--line);
+  --muted: var(--text-muted);
+
+  /* Spacing scale: generous on purpose. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.25rem;
+  --space-7: 3.5rem;
+
+  --radius-sm: 0.6rem;
+  --radius-md: 1rem;
+  --radius-pill: 999px;
+
+  /* Type scale. */
+  --text-sm: 0.78rem;
+  --text-md: 1rem;
+  --text-lg: 1.35rem;
+  --text-xl: 2rem;
+
+  /* Touch targets. */
+  --tap-size: 3rem;
+  --slider-height: 3.5rem;
+
+  --motion-fast: 140ms;
+  --motion-slow: 320ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-slow: 0ms;
+  }
+}

@@ -1,0 +1,62 @@
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-forgeecho}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-forgeecho-local}
+    volumes:
+      - forge-echo-mongo:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet
+          --username "$${MONGO_INITDB_ROOT_USERNAME}"
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}"
+          --authenticationDatabase admin
+          --eval "quit(db.adminCommand('ping').ok ? 0 : 1)"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 8081
+      MONGO_URI: mongodb://${MONGO_USERNAME:-forgeecho}:${MONGO_PASSWORD:-forgeecho-local}@mongo:27017/forge-echo?authSource=admin
+      # Battle Forge runs in its own compose project; reach it through the host.
+      BATTLE_FORGE_URL: ${BATTLE_FORGE_URL:-http://host.docker.internal:8080}
+      STATIC_ROOT: /app/public
+      MEDIA_ROOT: /app/media
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - forge-echo-media:/app/media
+    depends_on:
+      mongo:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:8081/api/health')
+          .then(response => process.exit(response.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - ${FORGE_ECHO_PORT:-8081}:8081
+
+volumes:
+  forge-echo-mongo:
+  forge-echo-media:

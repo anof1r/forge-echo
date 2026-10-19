@@ -1,0 +1,23 @@
+<div class="slider">
+  <div class="slider__head">
+    <span class="slider__label">{{ label() }}</span>
+    <span class="slider__value">{{ percent() }}%</span>
+  </div>
+  <div
+    class="slider__control"
+    role="slider"
+    tabindex="0"
+    [attr.aria-label]="label()"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    [attr.aria-valuenow]="percent()"
+    (keydown)="onKeydown($event)"
+    (pointerdown)="onPointerDown($any($event))"
+    (pointermove)="onPointerMove($any($event))"
+    (pointerup)="onPointerEnd()"
+    (pointercancel)="onPointerEnd()"
+  >
+    <div class="slider__fill" [style.width.%]="percent()"></div>
+    <div class="slider__thumb" [style.left.%]="percent()"></div>
+  </div>
+</div>
