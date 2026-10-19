@@ -3,6 +3,7 @@ import { ForgeApi } from '../../core/forge-api';
 import { LibraryStore } from '../../core/library-store';
 import { BATTLE_BINDING_KEY, Binding, Track, TrackKind } from '../../core/models';
 import { StageStateService } from '../../core/stage-state.service';
+import { TrimChange, TrimEditor } from '../../ui/trim-editor';
 
 interface BindingTarget {
   key: string;
@@ -14,6 +15,7 @@ const MAX_FADE_SECONDS = 30;
 
 @Component({
   selector: 'app-library-page',
+  imports: [TrimEditor],
   templateUrl: './library-page.html',
   styleUrl: './library-page.scss',
 })
@@ -24,6 +26,7 @@ export class LibraryPage {
 
   protected readonly uploadKind = signal<TrackKind>('ambient');
   protected readonly pendingDelete = signal<string | null>(null);
+  protected readonly waveformFor = signal<string | null>(null);
 
   protected readonly ambientTracks = computed(() => this.store.tracks().filter((track) => track.kind === 'ambient'));
   protected readonly targets = computed<BindingTarget[]>(() => [
@@ -69,10 +72,14 @@ export class LibraryPage {
     void this.store.patch(track.id, { loop: (event.target as HTMLInputElement).checked });
   }
 
-  protected useCurrentPosition(input: HTMLInputElement, audio: HTMLAudioElement): void {
-    input.value = audio.currentTime.toFixed(2);
+  protected toggleWaveform(track: Track): void {
+    this.waveformFor.update((current) => (current === track.id ? null : track.id));
   }
 
+  protected applyTrim(start: HTMLInputElement, end: HTMLInputElement, change: TrimChange): void {
+    start.value = (change.startMs / 1000).toFixed(2);
+    end.value = change.endMs === null ? '' : (change.endMs / 1000).toFixed(2);
+  }
   protected saveTrim(track: Track, start: string, end: string): void {
     const startSeconds = start.trim() === '' ? 0 : Number(start);
     const endSeconds = end.trim() === '' ? null : Number(end);

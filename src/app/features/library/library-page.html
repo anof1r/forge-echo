@@ -38,16 +38,23 @@
           <span class="badge">{{ track.kind === 'ambient' ? 'Ambient' : 'One-shot' }}</span>
         </div>
 
-        <audio #preview controls preload="none" [src]="api.streamUrl(track.id)"></audio>
+        <button type="button" class="secondary" data-test="trim-waveform" (click)="toggleWaveform(track)">
+          {{ waveformFor() === track.id ? 'Hide waveform' : 'Show waveform' }}
+        </button>
+        @if (waveformFor() === track.id) {
+          <app-trim-editor
+            [url]="api.streamUrl(track.id)"
+            [startMs]="track.startMs"
+            [endMs]="track.endMs"
+            (trimChange)="applyTrim(start, end, $event)"
+          />
+        }
 
         <div class="row">
           <label>
             Start (s)
             <input #start data-test="trim-start" type="number" min="0" step="0.1" [value]="track.startMs / 1000" />
           </label>
-          <button type="button" (click)="useCurrentPosition(start, preview)">Use position</button>
-        </div>
-        <div class="row">
           <label>
             End (s)
             <input
@@ -60,9 +67,7 @@
               [value]="track.endMs === null ? '' : track.endMs / 1000"
             />
           </label>
-          <button type="button" (click)="useCurrentPosition(end, preview)">Use position</button>
-        </div>
-        <button type="button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
+        </div>        <button type="button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
 
         <div class="row">
           <label class="grow">

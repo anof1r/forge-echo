@@ -1,3 +1,4 @@
+import { fadeCurve } from './fade-curve';
 import { Injectable } from '@angular/core';
 import { AudioBackend, PlayRequest, VoiceHandle } from './audio-backend';
 
@@ -65,7 +66,7 @@ export class WebAudioBackend extends AudioBackend {
       if (finished || request.fadeInMs <= 0) return;
       const now = context.currentTime;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(request.volume, now + request.fadeInMs / 1000);
+      gain.gain.setValueCurveAtTime(fadeCurve('in', request.volume), now, request.fadeInMs / 1000);
     }, finish);
 
     return {
@@ -74,8 +75,7 @@ export class WebAudioBackend extends AudioBackend {
         if (fadeOutMs <= 0) return finish();
         const now = context.currentTime;
         gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(gain.gain.value, now);
-        gain.gain.linearRampToValueAtTime(0, now + fadeOutMs / 1000);
+        gain.gain.setValueCurveAtTime(fadeCurve('out', gain.gain.value), now, fadeOutMs / 1000);
         setTimeout(finish, fadeOutMs + 50);
       },
     };

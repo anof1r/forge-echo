@@ -4,6 +4,7 @@ import { ForgeApi } from '../../core/forge-api';
 import { LibraryStore } from '../../core/library-store';
 import { Binding, StageState, Track } from '../../core/models';
 import { StageStateService } from '../../core/stage-state.service';
+import { WaveformFactory, WaveformHandlers } from '../../ui/waveform';
 import { LibraryPage } from './library-page';
 
 const track = (id: string, overrides: Partial<Track> = {}): Track => ({
@@ -26,6 +27,8 @@ describe('LibraryPage', () => {
     bind: ReturnType<typeof vi.fn>;
     unbind: ReturnType<typeof vi.fn>;
   };
+  let waveformHandlers: WaveformHandlers;
+  const waveformCreate = vi.fn();
   let element: HTMLElement;
   let fixture: ReturnType<typeof TestBed.createComponent<LibraryPage>>;
 
@@ -54,9 +57,15 @@ describe('LibraryPage', () => {
       bind: vi.fn().mockResolvedValue(undefined),
       unbind: vi.fn().mockResolvedValue(undefined),
     };
+    waveformCreate.mockReset();
+    waveformCreate.mockImplementation((_container, _url, _trim, handlers: WaveformHandlers) => {
+      waveformHandlers = handlers;
+      return { playTrim: vi.fn(), stop: vi.fn(), destroy: vi.fn() };
+    });
     TestBed.configureTestingModule({
       providers: [
         { provide: LibraryStore, useValue: store },
+        { provide: WaveformFactory, useValue: { create: waveformCreate } },
         { provide: StageStateService, useValue: { state: signal(stage) } },
         {
           provide: ForgeApi,
@@ -157,6 +166,47 @@ describe('LibraryPage', () => {
 
     // Assert
     expect(store.patch).toHaveBeenCalledWith('t1', { startMs: 0, endMs: null });
+  });
+
+  it('does not load any waveform until one is requested', () => {
+    // Arrange
+    render();
+
+    // Act
+    const editors = element.querySelectorAll('app-trim-editor');
+
+    // Assert
+    expect(editors).toHaveLength(0);
+    expect(waveformCreate).not.toHaveBeenCalled();
+  });
+
+  it('shows the waveform of a track on request', () => {
+    // Arrange
+    render();
+
+    // Act
+    (element.querySelector('[data-test="trim-waveform"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    // Assert
+    expect(element.querySelectorAll('app-trim-editor')).toHaveLength(1);
+    expect(waveformCreate.mock.calls[0][1]).toBe('/api/tracks/t1/stream');
+  });
+
+  it('fills the trim fields from the waveform and saves them', () => {
+    // Arrange
+    render();
+    (element.querySelector('[data-test="trim-waveform"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    waveformHandlers.ready(60);
+
+    // Act
+    waveformHandlers.trimChanged(3.5, 41);
+    fixture.detectChanges();
+    (element.querySelector('[data-test="trim-save"]') as HTMLButtonElement).click();
+
+    // Assert
+    expect(store.patch).toHaveBeenCalledWith('t1', { startMs: 3500, endMs: 41000 });
   });
 
   it('requires a second tap to delete a track', () => {

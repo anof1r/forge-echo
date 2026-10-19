@@ -205,7 +205,7 @@ describe('PlaybackService', () => {
     select('s2');
 
     // Assert
-    expect(backend.voices[0].stoppedWith).toBe(1500);
+    expect(backend.voices[0].stoppedWith).toBe(4000);
     expect(service.nowPlaying()).toBeNull();
     expect(service.manual()).toBe(true);
     expect(backend.voices).toHaveLength(1);

@@ -223,7 +223,7 @@ describe('TracksController and BindingsController', () => {
     const result = await bindingsController.put('aaa-111', { trackId: track.id });
 
     // Assert
-    expect(result.binding).toMatchObject({ slideId: 'aaa-111', trackId: track.id, fadeInMs: 1500, fadeOutMs: 1500, volume: 1 });
+    expect(result.binding).toMatchObject({ slideId: 'aaa-111', trackId: track.id, fadeInMs: 4000, fadeOutMs: 4000, volume: 1 });
   });
 
   it('replaces an existing binding for the same slide', async () => {

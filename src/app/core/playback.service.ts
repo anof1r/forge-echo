@@ -6,7 +6,7 @@ import { Track } from './models';
 import { planPlayback } from './playback-planner';
 import { StageStateService } from './stage-state.service';
 
-const MANUAL_FADE_MS = 1500;
+const MANUAL_FADE_MS = 4000;
 
 @Injectable({ providedIn: 'root' })
 export class PlaybackService {

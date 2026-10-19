@@ -4,6 +4,7 @@ export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string
 
 export const ID_PATTERN = /^[0-9a-zA-Z-]{1,64}$/;
 const MAX_FADE_MS = 30000;
+const DEFAULT_FADE_MS = 4000;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -58,8 +59,8 @@ export function parseBindingInput(input: unknown): ParseResult<BindingInput> {
   if (typeof trackId !== 'string' || !ID_PATTERN.test(trackId)) {
     return { ok: false, error: 'trackId is invalid.' };
   }
-  const fadeInMs = input['fadeInMs'] ?? 1500;
-  const fadeOutMs = input['fadeOutMs'] ?? 1500;
+  const fadeInMs = input['fadeInMs'] ?? DEFAULT_FADE_MS;
+  const fadeOutMs = input['fadeOutMs'] ?? DEFAULT_FADE_MS;
   const volume = input['volume'] ?? 1;
   if (!isNonNegativeInt(fadeInMs) || fadeInMs > MAX_FADE_MS) return { ok: false, error: 'fadeInMs is invalid.' };
   if (!isNonNegativeInt(fadeOutMs) || fadeOutMs > MAX_FADE_MS) return { ok: false, error: 'fadeOutMs is invalid.' };

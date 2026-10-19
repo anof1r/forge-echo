@@ -1,0 +1,12 @@
+<div class="trim">
+  <div #wave class="trim__wave"></div>
+  @if (failed()) {
+    <p class="trim__error" data-test="trim-error">The waveform could not be loaded. You can still set the times below.</p>
+  }
+  <div class="trim__bar">
+    <p class="trim__hint">Drag the highlighted part to move it, pull its edges to trim.</p>
+    <button type="button" class="trim__play" data-test="trim-preview" (click)="togglePreview()">
+      {{ playing() ? 'Stop' : 'Play selection' }}
+    </button>
+  </div>
+</div>

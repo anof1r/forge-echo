@@ -96,7 +96,7 @@ describe('parseBindingInput', () => {
     // Assert
     expect(result).toEqual({
       ok: true,
-      value: { trackId: 'abc-123', fadeInMs: 1500, fadeOutMs: 1500, volume: 1 },
+      value: { trackId: 'abc-123', fadeInMs: 4000, fadeOutMs: 4000, volume: 1 },
     });
   });
 
