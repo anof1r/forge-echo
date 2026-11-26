@@ -50,6 +50,19 @@ describe('LibraryPage', () => {
     element = fixture.nativeElement as HTMLElement;
   };
 
+  const openSection = (section: 'effects' | 'ambient' | 'scenes'): void => {
+    const button = element.querySelector<HTMLButtonElement>(`[data-test="section-${section}"]`) as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+  };
+
+  const editTrack = (id: string, section: 'effects' | 'ambient' = 'ambient'): void => {
+    openSection(section);
+    const button = element.querySelector<HTMLButtonElement>(`[data-test="track-edit-${id}"]`) as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+  };
+
   beforeEach(() => {
     store = {
       tracks: signal([track('t1'), track('shot', { kind: 'oneshot', loop: false, name: 'Door' })]),
@@ -99,15 +112,18 @@ describe('LibraryPage', () => {
     expect(store.refresh).toHaveBeenCalledTimes(1);
   });
 
-  it('lists every track with its name', () => {
+  it('separates effects and ambient tracks into clear sections', () => {
     // Arrange - providers are set
 
     // Act
     render();
 
     // Assert
-    const names = Array.from(element.querySelectorAll<HTMLInputElement>('[data-test="track-name"]')).map((input) => input.value);
-    expect(names).toEqual(['Track t1', 'Door']);
+    let names = Array.from(element.querySelectorAll<HTMLElement>('[data-test="track-title"]')).map((item) => item.textContent?.trim());
+    expect(names).toEqual(['Door']);
+    openSection('ambient');
+    names = Array.from(element.querySelectorAll<HTMLElement>('[data-test="track-title"]')).map((item) => item.textContent?.trim());
+    expect(names).toEqual(['Track t1']);
   });
 
   it('creates groups and assigns one-shot sounds to groups', () => {
@@ -118,6 +134,8 @@ describe('LibraryPage', () => {
 
     // Act
     element.querySelector<HTMLButtonElement>('[data-test="group-create"]')?.click();
+    (element.querySelector<HTMLButtonElement>('[data-test="group-add-weapons"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const checkbox = element.querySelector<HTMLInputElement>('[data-test="assign-shot-weapons"]') as HTMLInputElement;
     checkbox.click();
 
@@ -129,6 +147,7 @@ describe('LibraryPage', () => {
   it('uploads an illustration for a one-shot tile', async () => {
     // Arrange
     render();
+    editTrack('shot', 'effects');
     const input = element.querySelector<HTMLInputElement>('[data-test="artwork-shot"]') as HTMLInputElement;
     const image = new File(['pixels'], 'door.webp', { type: 'image/webp' });
     Object.defineProperty(input, 'files', { value: [image], configurable: true });
@@ -161,6 +180,7 @@ describe('LibraryPage', () => {
   it('renames a track when the name changes', () => {
     // Arrange
     render();
+    editTrack('t1');
     const input = element.querySelector<HTMLInputElement>('[data-test="track-name"]') as HTMLInputElement;
     input.value = '  Rainy tavern ';
 
@@ -174,6 +194,7 @@ describe('LibraryPage', () => {
   it('does not rename to an empty name', () => {
     // Arrange
     render();
+    editTrack('t1');
     const input = element.querySelector<HTMLInputElement>('[data-test="track-name"]') as HTMLInputElement;
     input.value = '   ';
 
@@ -188,6 +209,7 @@ describe('LibraryPage', () => {
   it('saves trim marks converted from seconds to milliseconds', () => {
     // Arrange
     render();
+    editTrack('t1');
     const start = element.querySelector<HTMLInputElement>('[data-test="trim-start"]') as HTMLInputElement;
     const end = element.querySelector<HTMLInputElement>('[data-test="trim-end"]') as HTMLInputElement;
     start.value = '1.5';
@@ -203,6 +225,7 @@ describe('LibraryPage', () => {
   it('treats an empty trim end as play to the end of the file', () => {
     // Arrange
     render();
+    editTrack('t1');
     (element.querySelector('[data-test="trim-start"]') as HTMLInputElement).value = '0';
     (element.querySelector('[data-test="trim-end"]') as HTMLInputElement).value = '';
 
@@ -216,6 +239,7 @@ describe('LibraryPage', () => {
   it('does not load any waveform until one is requested', () => {
     // Arrange
     render();
+    editTrack('t1');
 
     // Act
     const editors = element.querySelectorAll('app-trim-editor');
@@ -228,6 +252,7 @@ describe('LibraryPage', () => {
   it('shows the waveform of a track on request', () => {
     // Arrange
     render();
+    editTrack('t1');
 
     // Act
     (element.querySelector('[data-test="trim-waveform"]') as HTMLButtonElement).click();
@@ -241,6 +266,7 @@ describe('LibraryPage', () => {
   it('fills the trim fields from the waveform and saves them', () => {
     // Arrange
     render();
+    editTrack('t1');
     (element.querySelector('[data-test="trim-waveform"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     waveformHandlers.ready(60);
@@ -257,6 +283,7 @@ describe('LibraryPage', () => {
   it('requires a second tap to delete a track', () => {
     // Arrange
     render();
+    editTrack('t1');
     const button = (): HTMLButtonElement => element.querySelector('[data-test="track-delete"]') as HTMLButtonElement;
 
     // Act
@@ -275,6 +302,7 @@ describe('LibraryPage', () => {
 
     // Act
     render();
+    openSection('scenes');
 
     // Assert
     const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
@@ -285,6 +313,7 @@ describe('LibraryPage', () => {
   it('offers only ambient tracks for binding', () => {
     // Arrange
     render();
+    openSection('scenes');
 
     // Act
     const options = Array.from(element.querySelectorAll<HTMLOptionElement>('[data-test="bind-s1"] option')).map((o) => o.value);
@@ -297,6 +326,7 @@ describe('LibraryPage', () => {
     // Arrange
     store.bindings.set([]);
     render();
+    openSection('scenes');
     const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
     select.value = 't1';
 
@@ -311,6 +341,7 @@ describe('LibraryPage', () => {
     // Arrange
     store.tracks.update((tracks) => [...tracks, track('t3')]);
     render();
+    openSection('scenes');
     const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
     select.value = 't3';
 
@@ -324,6 +355,7 @@ describe('LibraryPage', () => {
   it('removes the binding when no track is chosen', () => {
     // Arrange
     render();
+    openSection('scenes');
     const select = element.querySelector<HTMLSelectElement>('[data-test="bind-s1"]') as HTMLSelectElement;
     select.value = '';
 
@@ -337,6 +369,7 @@ describe('LibraryPage', () => {
   it('lets the battle screen have its own binding', () => {
     // Arrange
     render();
+    openSection('scenes');
 
     // Act
     const battle = element.querySelector('[data-test="bind-battle"]');
@@ -348,6 +381,7 @@ describe('LibraryPage', () => {
   it('updates fade times in seconds', () => {
     // Arrange
     render();
+    openSection('scenes');
     const fade = element.querySelector<HTMLInputElement>('[data-test="fade-in-s1"]') as HTMLInputElement;
     fade.value = '4';
 

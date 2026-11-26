@@ -246,6 +246,24 @@ describe('PlaybackService', () => {
     expect(service.nowPlaying()?.id).toBe('t1');
   });
 
+  it('varies the pitch only when the same one-shot is triggered rapidly again', async () => {
+    // Arrange
+    await service.startSession();
+    const time = vi.spyOn(Date, 'now').mockReturnValueOnce(1000).mockReturnValueOnce(1200);
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.8);
+    const effect = track('shot', { kind: 'oneshot', loop: false });
+
+    // Act
+    service.playOneShot(effect);
+    service.playOneShot(effect);
+
+    // Assert
+    expect(backend.voices[0].request.pitchSemitones).toBe(0);
+    expect(backend.voices[1].request.pitchSemitones).toBeCloseTo(1.08, 2);
+    time.mockRestore();
+    random.mockRestore();
+  });
+
   it('ignores one-shots before the session starts', () => {
     // Arrange - session not started
 

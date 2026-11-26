@@ -4,6 +4,7 @@ import { ForgeApi } from './forge-api';
 import { LibraryStore } from './library-store';
 import { Track } from './models';
 import { planPlayback } from './playback-planner';
+import { OneShotPitchMemory, nextOneShotPitch } from './one-shot-pitch';
 import { perceivedVolumeGain } from './perceived-volume';
 import { StageStateService } from './stage-state.service';
 
@@ -24,6 +25,7 @@ export class PlaybackService {
 
   private voice: VoiceHandle | null = null;
   private generation = 0;
+  private readonly oneShotPitchMemory = new Map<string, OneShotPitchMemory>();
 
   constructor() {
     effect(() => {
@@ -86,6 +88,9 @@ export class PlaybackService {
 
   playOneShot(track: Track): void {
     if (!this.started()) return;
+    const now = Date.now();
+    const pitchSemitones = nextOneShotPitch(this.oneShotPitchMemory.get(track.id) ?? null, now);
+    this.oneShotPitchMemory.set(track.id, { at: now, semitones: pitchSemitones });
     this.backend.play(
       {
         url: this.api.streamUrl(track.id),
@@ -94,6 +99,7 @@ export class PlaybackService {
         loop: false,
         volume: track.volume,
         fadeInMs: 0,
+        pitchSemitones,
       },
       () => undefined,
     );

@@ -12,6 +12,7 @@ interface BindingTarget {
 }
 
 const MAX_FADE_SECONDS = 30;
+type LibrarySection = 'effects' | 'ambient' | 'scenes';
 
 @Component({
   selector: 'app-library-page',
@@ -24,12 +25,16 @@ export class LibraryPage {
   protected readonly api = inject(ForgeApi);
   private readonly stage = inject(StageStateService);
 
-  protected readonly uploadKind = signal<TrackKind>('ambient');
+  protected readonly uploadKind = signal<TrackKind>('oneshot');
+  protected readonly activeSection = signal<LibrarySection>('effects');
+  protected readonly editingTrackId = signal<string | null>(null);
+  protected readonly assignmentGroupId = signal<string | null>(null);
   protected readonly pendingDelete = signal<string | null>(null);
   protected readonly pendingDeleteGroup = signal<string | null>(null);
   protected readonly waveformFor = signal<string | null>(null);
 
   protected readonly ambientTracks = computed(() => this.store.tracks().filter((track) => track.kind === 'ambient'));
+  protected readonly oneShotTracks = computed(() => this.store.tracks().filter((track) => track.kind === 'oneshot'));
   protected readonly targets = computed<BindingTarget[]>(() => [
     { key: BATTLE_BINDING_KEY, name: 'Battle screen', imageUrl: null },
     ...this.stage.state().slides.map((slide) => ({
@@ -41,6 +46,33 @@ export class LibraryPage {
 
   constructor() {
     void this.store.refresh();
+  }
+
+  protected setSection(section: LibrarySection): void {
+    this.activeSection.set(section);
+    if (section === 'effects') this.uploadKind.set('oneshot');
+    if (section === 'ambient') this.uploadKind.set('ambient');
+    this.assignmentGroupId.set(null);
+  }
+
+  protected toggleTrackEditor(track: Track): void {
+    this.editingTrackId.update((current) => (current === track.id ? null : track.id));
+  }
+
+  protected openGroupAssignment(groupId: string): void {
+    this.assignmentGroupId.set(groupId);
+  }
+
+  protected closeGroupAssignment(): void {
+    this.assignmentGroupId.set(null);
+  }
+
+  protected groupName(groupId: string): string {
+    return this.store.oneShotGroups().find((group) => group.id === groupId)?.name ?? '';
+  }
+
+  protected groupTracks(groupId: string): Track[] {
+    return this.oneShotTracks().filter((track) => (track.groupIds ?? []).includes(groupId));
   }
 
   protected setUploadKind(event: Event): void {

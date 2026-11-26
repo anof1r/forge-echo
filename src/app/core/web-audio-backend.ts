@@ -48,7 +48,15 @@ export class WebAudioBackend extends AudioBackend {
 
     gain.gain.cancelScheduledValues(0);
     gain.gain.value = request.fadeInMs > 0 ? 0 : request.volume;
+    const pitchShifted = (request.pitchSemitones ?? 0) !== 0;
+    const playbackRate = 2 ** ((request.pitchSemitones ?? 0) / 12);
+    element.playbackRate = 1;
+    element.preservesPitch = true;
     element.src = request.url;
+    if (pitchShifted) {
+      element.preservesPitch = false;
+      element.playbackRate = playbackRate;
+    }
 
     let finished = false;
     let stopping = false;
@@ -63,6 +71,8 @@ export class WebAudioBackend extends AudioBackend {
       if (timer) clearInterval(timer);
       this.voices.delete(voice);
       element.pause();
+      element.playbackRate = 1;
+      element.preservesPitch = true;
       element.removeAttribute('src');
       element.load();
       this.pool?.release(slot);
@@ -98,6 +108,10 @@ export class WebAudioBackend extends AudioBackend {
       'loadedmetadata',
       () => {
         if (request.startMs > 0) element.currentTime = request.startMs / 1000;
+        if (pitchShifted) {
+          element.preservesPitch = false;
+          element.playbackRate = playbackRate;
+        }
       },
       { once: true, ...options },
     );

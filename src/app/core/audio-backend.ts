@@ -5,6 +5,7 @@ export interface PlayRequest {
   loop: boolean;
   volume: number;
   fadeInMs: number;
+  pitchSemitones?: number;
 }
 
 export interface VoiceHandle {

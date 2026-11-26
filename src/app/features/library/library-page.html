@@ -1,199 +1,288 @@
 <section class="page">
-  <h1>Library</h1>
+  <header class="page-heading">
+    <p class="eyebrow">Soundboard setup</p>
+    <h1>Library</h1>
+    <p class="muted">Add sounds, organize effects, and tune how each track plays.</p>
+  </header>
 
   @if (store.error(); as message) {
     <p class="alert" role="alert">{{ message }}</p>
   }
 
-  <section class="card">
-    <h2>Add sound</h2>
-    <div class="row">
-      <label>
-        Type
-        <select data-test="upload-kind" (change)="setUploadKind($event)">
-          <option value="ambient">Ambient (loops)</option>
-          <option value="oneshot">One-shot</option>
-        </select>
-      </label>
-      <label class="file">
-        Choose audio files
-        <input data-test="upload-file" type="file" accept="audio/*" multiple (change)="upload($event)" />
-      </label>
-    </div>
-  </section>
+  <nav class="library-nav" aria-label="Library sections">
+    <button type="button" data-test="section-effects" [class.library-nav__item--active]="activeSection() === 'effects'" (click)="setSection('effects')">
+      <span>Sound effects</span><span class="library-nav__count">{{ oneShotTracks().length }}</span>
+    </button>
+    <button type="button" data-test="section-ambient" [class.library-nav__item--active]="activeSection() === 'ambient'" (click)="setSection('ambient')">
+      <span>Ambient</span><span class="library-nav__count">{{ ambientTracks().length }}</span>
+    </button>
+    <button type="button" data-test="section-scenes" [class.library-nav__item--active]="activeSection() === 'scenes'" (click)="setSection('scenes')">
+      <span>Scene sounds</span><span class="library-nav__count">{{ targets().length }}</span>
+    </button>
+  </nav>
 
-  <section class="card" data-test="oneshot-groups">
-    <h2>Sound effect groups</h2>
-    <p class="muted">Organize one-shot sounds into Stage categories.</p>
-    <div class="row">
-      <label class="grow">
-        New group
-        <input #newGroup data-test="new-group-name" maxlength="48" placeholder="Weapons" />
-      </label>
-      <button type="button" data-test="group-create" (click)="createGroup(newGroup.value); newGroup.value = ''">Create group</button>
-    </div>
-    <div class="group-manager">
-      @for (group of store.oneShotGroups(); track group.id) {
-        <div class="group-manager__row" [attr.data-test]="'group-' + group.id">
-          <input #groupName [value]="group.name" maxlength="48" [attr.aria-label]="'Group name ' + group.name" />
-          <button type="button" class="secondary" [attr.data-test]="'group-save-' + group.id" (click)="renameGroup(group.id, groupName.value)">Save</button>
-          <button type="button" class="danger" [attr.data-test]="'group-delete-' + group.id" (click)="requestDeleteGroup(group.id)">
-            {{ pendingDeleteGroup() === group.id ? 'Tap again to delete' : 'Delete' }}
-          </button>
+  @if (activeSection() !== 'scenes') {
+    <section class="card add-card" data-test="add-audio">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Add to library</p>
+          <h2>{{ uploadKind() === 'oneshot' ? 'Add sound effects' : 'Add ambient tracks' }}</h2>
         </div>
-      } @empty {
-        <p class="muted">No groups yet. Create one, then add one-shot sounds to it.</p>
-      }
-    </div>
-  </section>
+        <span class="step-badge">01</span>
+      </div>
+      <div class="upload-controls">
+        <label>
+          Sound type
+          <select data-test="upload-kind" [value]="uploadKind()" (change)="setUploadKind($event)">
+            <option value="oneshot">Sound effect</option>
+            <option value="ambient">Ambient track</option>
+          </select>
+        </label>
+        <label class="file-pick">
+          <span class="file-pick__icon" aria-hidden="true">+</span>
+          <span>Choose audio files</span>
+          <input data-test="upload-file" type="file" accept="audio/*" multiple (change)="upload($event)" />
+        </label>
+      </div>
+      <p class="hint">Upload multiple audio files at once. You can rename and configure each sound below.</p>
+    </section>
+  }
 
-  <section>
-    <h2>Tracks</h2>
-    @for (track of store.tracks(); track track.id) {
-      <article class="card" [attr.data-test]="'track-' + track.id">
-        <div class="row">
-          <input
-            class="grow"
-            data-test="track-name"
-            aria-label="Track name"
-            maxlength="80"
-            [value]="track.name"
-            (change)="rename(track, $event)"
-          />
-          <span class="badge">{{ track.kind === 'ambient' ? 'Ambient' : 'One-shot' }}</span>
+  @if (activeSection() === 'effects') {
+    <section class="card group-workspace" data-test="oneshot-groups">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Organize and assign</p>
+          <h2>Sound effect groups</h2>
         </div>
+        <span class="step-badge">02</span>
+      </div>
+      <p class="muted">Create categories such as Weapons or Magic. Open a group and choose which sounds appear on its Stage screen.</p>
 
-        @if (track.kind === 'oneshot') {
-          <div class="oneshot-details" [attr.data-test]="'oneshot-details-' + track.id">
-            <div class="artwork-row">
-              @if (api.artworkUrl(track); as artworkUrl) {
-                <img class="artwork-preview" [src]="artworkUrl" [alt]="track.name" />
-              } @else {
-                <div class="artwork-preview artwork-preview--empty" aria-hidden="true">No image</div>
-              }
-              <label class="file">
-                Tile image
-                <input [attr.data-test]="'artwork-' + track.id" type="file" accept="image/jpeg,image/png,image/webp" (change)="setArtwork(track, $event)" />
-              </label>
+      <div class="create-group">
+        <label class="grow">
+          Group name
+          <input #newGroup data-test="new-group-name" maxlength="48" placeholder="Weapons" />
+        </label>
+        <button type="button" class="primary-button" data-test="group-create" (click)="createGroup(newGroup.value); newGroup.value = ''">Create group</button>
+      </div>
+
+      <div class="group-list">
+        @for (group of store.oneShotGroups(); track group.id) {
+          <article class="group-card" [attr.data-test]="'group-' + group.id">
+            <div class="group-card__main">
+              <div class="group-card__identity">
+                <div>
+                  <h3>{{ group.name }}</h3>
+                  <p>{{ groupTracks(group.id).length }} sounds</p>
+                </div>
+              </div>
+              <button type="button" class="primary-button group-card__add" [attr.data-test]="'group-add-' + group.id" (click)="openGroupAssignment(group.id)">
+                Add sounds
+              </button>
             </div>
-            <fieldset class="group-checks">
-              <legend>Groups</legend>
-              @for (group of store.oneShotGroups(); track group.id) {
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    [attr.data-test]="'assign-' + track.id + '-' + group.id"
-                    [checked]="isInGroup(track, group.id)"
-                    (change)="toggleGroup(track, group.id, $event)"
-                  />
-                  {{ group.name }}
+            @if (groupTracks(group.id).length) {
+              <div class="group-card__sounds">
+                @for (track of groupTracks(group.id); track track.id) {
+                  <span class="group-card__sound">{{ track.name }}</span>
+                }
+              </div>
+            } @else {
+              <p class="group-card__empty">This group is empty. Add sounds to show them on Stage.</p>
+            }
+            <details class="group-card__settings">
+              <summary>Rename or remove group</summary>
+              <div class="group-card__settings-row">
+                <input #groupName [value]="group.name" maxlength="48" [attr.aria-label]="'Group name ' + group.name" />
+                <button type="button" class="secondary-button" [attr.data-test]="'group-save-' + group.id" (click)="renameGroup(group.id, groupName.value)">Save name</button>
+                <button type="button" class="danger-button" [attr.data-test]="'group-delete-' + group.id" (click)="requestDeleteGroup(group.id)">
+                  {{ pendingDeleteGroup() === group.id ? 'Tap again to remove' : 'Remove group' }}
+                </button>
+              </div>
+            </details>
+          </article>
+        } @empty {
+          <div class="empty-state">
+            <strong>No groups yet</strong>
+            <span>Create a group above, then use its Add sounds button.</span>
+          </div>
+        }
+      </div>
+
+      @if (assignmentGroupId(); as groupId) {
+        <section class="assignment-panel" [attr.data-test]="'assignment-panel-' + groupId" aria-label="Add sounds to group">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Group contents</p>
+              <h3>Add sounds to {{ groupName(groupId) }}</h3>
+            </div>
+            <button type="button" class="secondary-button" data-test="assignment-close" (click)="closeGroupAssignment()">Done</button>
+          </div>
+          <p class="hint">Select every sound you want on this group's Stage screen. A sound can appear in more than one group.</p>
+          <div class="assignment-list">
+            @for (track of oneShotTracks(); track track.id) {
+              <label class="assignment-item">
+                @if (api.artworkUrl(track); as imageUrl) { <img [src]="imageUrl" alt="" /> }
+                @else { <span class="assignment-item__placeholder" aria-hidden="true">+</span> }
+                <span class="assignment-item__name">{{ track.name }}</span>
+                <input
+                  type="checkbox"
+                  [attr.data-test]="'assign-' + track.id + '-' + groupId"
+                  [checked]="isInGroup(track, groupId)"
+                  (change)="toggleGroup(track, groupId, $event)"
+                />
+              </label>
+            } @empty {
+              <div class="empty-state">
+                <strong>No sound effects uploaded</strong>
+                <span>Upload effects in the Add sound effects card above.</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </section>
+
+    <section class="sound-library">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Your files</p>
+          <h2>Sound effects</h2>
+        </div>
+        <span class="step-badge">03</span>
+      </div>
+      @for (track of oneShotTracks(); track track.id) {
+        <article class="sound-card" [attr.data-test]="'track-' + track.id">
+          <div class="sound-card__summary">
+            @if (api.artworkUrl(track); as imageUrl) { <img class="sound-card__art" [src]="imageUrl" [alt]="track.name" /> }
+            @else { <span class="sound-card__art sound-card__art--empty" aria-hidden="true">+</span> }
+            <div class="sound-card__identity">
+              <strong data-test="track-title">{{ track.name }}</strong>
+              <span>{{ (track.groupIds ?? []).length ? (track.groupIds ?? []).length + ' groups' : 'Not in a group' }}</span>
+            </div>
+            <button type="button" class="secondary-button" [attr.data-test]="'track-edit-' + track.id" (click)="toggleTrackEditor(track)">
+              {{ editingTrackId() === track.id ? 'Close' : 'Edit sound' }}
+            </button>
+          </div>
+
+          @if (editingTrackId() === track.id) {
+            <div class="sound-editor" [attr.data-test]="'track-editor-' + track.id">
+              <label>
+                Sound name
+                <input data-test="track-name" maxlength="80" [value]="track.name" (change)="rename(track, $event)" />
+              </label>
+              <div class="artwork-row">
+                @if (api.artworkUrl(track); as artworkUrl) { <img class="artwork-preview" [src]="artworkUrl" [alt]="track.name" /> }
+                @else { <div class="artwork-preview artwork-preview--empty">No image</div> }
+                <label class="file-pick file-pick--compact">
+                  <span>Change tile image</span>
+                  <input [attr.data-test]="'artwork-' + track.id" type="file" accept="image/jpeg,image/png,image/webp" (change)="setArtwork(track, $event)" />
                 </label>
-              } @empty {
-                <p class="muted">Create a group above to organize this sound.</p>
-              }
-            </fieldset>
-          </div>
-        }
-
-        <button type="button" class="secondary" data-test="trim-waveform" (click)="toggleWaveform(track)">
-          {{ waveformFor() === track.id ? 'Hide waveform' : 'Show waveform' }}
-        </button>
-        @if (waveformFor() === track.id) {
-          <app-trim-editor
-            [url]="api.streamUrl(track.id)"
-            [startMs]="track.startMs"
-            [endMs]="track.endMs"
-            (trimChange)="applyTrim(start, end, $event)"
-          />
-        }
-
-        <div class="row">
-          <label>
-            Start (s)
-            <input #start data-test="trim-start" type="number" min="0" step="0.1" [value]="track.startMs / 1000" />
-          </label>
-          <label>
-            End (s)
-            <input
-              #end
-              data-test="trim-end"
-              type="number"
-              min="0"
-              step="0.1"
-              placeholder="end of file"
-              [value]="track.endMs === null ? '' : track.endMs / 1000"
-            />
-          </label>
-        </div>        <button type="button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
-
-        <div class="row">
-          <label class="grow">
-            Volume
-            <input type="range" min="0" max="100" [value]="track.volume * 100" (change)="setVolume(track, $event)" />
-          </label>
-          @if (track.kind === 'ambient') {
-            <label class="check">
-              <input type="checkbox" [checked]="track.loop" (change)="setLoop(track, $event)" />
-              Loop
-            </label>
+              </div>
+              <div class="trim-controls">
+                <button type="button" class="secondary-button" data-test="trim-waveform" (click)="toggleWaveform(track)">
+                  {{ waveformFor() === track.id ? 'Hide waveform' : 'Edit trim with waveform' }}
+                </button>
+                @if (waveformFor() === track.id) {
+                  <app-trim-editor [url]="api.streamUrl(track.id)" [startMs]="track.startMs" [endMs]="track.endMs" (trimChange)="applyTrim(start, end, $event)" />
+                }
+                <div class="row">
+                  <label>Start (s)<input #start data-test="trim-start" type="number" min="0" step="0.1" [value]="track.startMs / 1000" /></label>
+                  <label>End (s)<input #end data-test="trim-end" type="number" min="0" step="0.1" placeholder="End of file" [value]="track.endMs === null ? '' : track.endMs / 1000" /></label>
+                  <button type="button" class="secondary-button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
+                </div>
+              </div>
+              <label class="volume-control">Sound volume<input type="range" min="0" max="100" [value]="track.volume * 100" (change)="setVolume(track, $event)" /></label>
+              <button type="button" class="danger-button" data-test="track-delete" (click)="requestDelete(track)">
+                {{ pendingDelete() === track.id ? 'Tap again to delete' : 'Delete sound' }}
+              </button>
+            </div>
           }
+        </article>
+      } @empty {
+        <div class="empty-state">
+          <strong>No sound effects yet</strong>
+          <span>Upload your first effect above to start building the soundboard.</span>
         </div>
+      }
+    </section>
+  }
 
-        <button type="button" class="danger" data-test="track-delete" (click)="requestDelete(track)">
-          {{ pendingDelete() === track.id ? 'Tap again to delete' : 'Delete' }}
-        </button>
-      </article>
-    } @empty {
-      <p class="muted">No sounds yet. Add your first track above.</p>
-    }
-  </section>
-
-  <section>
-    <h2>Scene sounds</h2>
-    <p class="muted">A slide without a sound keeps the previous track playing.</p>
-    @for (target of targets(); track target.key) {
-      <article class="card" [attr.data-test]="'binding-' + target.key">
-        <div class="row">
-          @if (target.imageUrl) {
-            <img class="thumb" alt="" [src]="target.imageUrl" />
-          }
-          <strong class="grow">{{ target.name }}</strong>
+  @if (activeSection() === 'ambient') {
+    <section class="sound-library">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Background music and atmosphere</p>
+          <h2>Ambient tracks</h2>
         </div>
-        <select [attr.data-test]="'bind-' + target.key" [attr.aria-label]="'Sound for ' + target.name" (change)="changeBinding(target.key, $event)">
-          <option value="" [selected]="!bindingFor(target.key)">Keep previous</option>
-          @for (track of ambientTracks(); track track.id) {
-            <option [value]="track.id" [selected]="bindingFor(target.key)?.trackId === track.id">{{ track.name }}</option>
-          }
-        </select>
-        @if (bindingFor(target.key); as binding) {
-          <div class="row">
-            <label>
-              Fade in (s)
-              <input
-                [attr.data-test]="'fade-in-' + target.key"
-                type="number"
-                min="0"
-                max="30"
-                step="0.5"
-                [value]="binding.fadeInMs / 1000"
-                (change)="changeFade(target.key, 'fadeInMs', $event)"
-              />
-            </label>
-            <label>
-              Fade out (s)
-              <input
-                [attr.data-test]="'fade-out-' + target.key"
-                type="number"
-                min="0"
-                max="30"
-                step="0.5"
-                [value]="binding.fadeOutMs / 1000"
-                (change)="changeFade(target.key, 'fadeOutMs', $event)"
-              />
-            </label>
+        <span class="step-badge">02</span>
+      </div>
+      @for (track of ambientTracks(); track track.id) {
+        <article class="sound-card" [attr.data-test]="'track-' + track.id">
+          <div class="sound-card__summary">
+            <span class="sound-card__art sound-card__art--ambient" aria-hidden="true">A</span>
+            <div class="sound-card__identity"><strong data-test="track-title">{{ track.name }}</strong><span>{{ track.loop ? 'Loops' : 'Plays once' }}</span></div>
+            <button type="button" class="secondary-button" [attr.data-test]="'track-edit-' + track.id" (click)="toggleTrackEditor(track)">
+              {{ editingTrackId() === track.id ? 'Close' : 'Edit track' }}
+            </button>
           </div>
-        }
-      </article>
-    }
-  </section>
+          @if (editingTrackId() === track.id) {
+            <div class="sound-editor" [attr.data-test]="'track-editor-' + track.id">
+              <label>Track name<input data-test="track-name" maxlength="80" [value]="track.name" (change)="rename(track, $event)" /></label>
+              <div class="trim-controls">
+                <button type="button" class="secondary-button" data-test="trim-waveform" (click)="toggleWaveform(track)">{{ waveformFor() === track.id ? 'Hide waveform' : 'Edit trim with waveform' }}</button>
+                @if (waveformFor() === track.id) { <app-trim-editor [url]="api.streamUrl(track.id)" [startMs]="track.startMs" [endMs]="track.endMs" (trimChange)="applyTrim(start, end, $event)" /> }
+                <div class="row">
+                  <label>Start (s)<input #start data-test="trim-start" type="number" min="0" step="0.1" [value]="track.startMs / 1000" /></label>
+                  <label>End (s)<input #end data-test="trim-end" type="number" min="0" step="0.1" placeholder="End of file" [value]="track.endMs === null ? '' : track.endMs / 1000" /></label>
+                  <button type="button" class="secondary-button" data-test="trim-save" (click)="saveTrim(track, start.value, end.value)">Save trim</button>
+                </div>
+              </div>
+              <div class="sound-editor__options">
+                <label class="volume-control">Sound volume<input type="range" min="0" max="100" [value]="track.volume * 100" (change)="setVolume(track, $event)" /></label>
+                <label class="check"><input type="checkbox" [checked]="track.loop" (change)="setLoop(track, $event)" /> Loop track</label>
+              </div>
+              <button type="button" class="danger-button" data-test="track-delete" (click)="requestDelete(track)">{{ pendingDelete() === track.id ? 'Tap again to delete' : 'Delete track' }}</button>
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="empty-state"><strong>No ambient tracks yet</strong><span>Upload music or atmosphere from the card above.</span></div>
+      }
+    </section>
+  }
+
+  @if (activeSection() === 'scenes') {
+    <section class="scene-library">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Automatic playback</p>
+          <h2>Scene sounds</h2>
+        </div>
+        <span class="step-badge">03</span>
+      </div>
+      <p class="muted">Choose the ambient track for each Battle Forge slide. A slide without a sound keeps the previous track playing.</p>
+      @for (target of targets(); track target.key) {
+        <article class="scene-binding" [attr.data-test]="'binding-' + target.key">
+          <div class="scene-binding__heading">
+            @if (target.imageUrl) { <img class="thumb" alt="" [src]="target.imageUrl" /> }
+            <strong>{{ target.name }}</strong>
+          </div>
+          <label>
+            Ambient track
+            <select [attr.data-test]="'bind-' + target.key" [attr.aria-label]="'Sound for ' + target.name" (change)="changeBinding(target.key, $event)">
+              <option value="" [selected]="!bindingFor(target.key)">Keep previous</option>
+              @for (track of ambientTracks(); track track.id) { <option [value]="track.id" [selected]="bindingFor(target.key)?.trackId === track.id">{{ track.name }}</option> }
+            </select>
+          </label>
+          @if (bindingFor(target.key); as binding) {
+            <div class="fade-settings">
+              <label>Fade in (s)<input [attr.data-test]="'fade-in-' + target.key" type="number" min="0" max="30" step="0.5" [value]="binding.fadeInMs / 1000" (change)="changeFade(target.key, 'fadeInMs', $event)" /></label>
+              <label>Fade out (s)<input [attr.data-test]="'fade-out-' + target.key" type="number" min="0" max="30" step="0.5" [value]="binding.fadeOutMs / 1000" (change)="changeFade(target.key, 'fadeOutMs', $event)" /></label>
+            </div>
+          }
+        </article>
+      }
+    </section>
+  }
 </section>
