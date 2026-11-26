@@ -4,6 +4,7 @@ import { ForgeApi } from './forge-api';
 import { LibraryStore } from './library-store';
 import { Track } from './models';
 import { planPlayback } from './playback-planner';
+import { perceivedVolumeGain } from './perceived-volume';
 import { StageStateService } from './stage-state.service';
 
 const MANUAL_FADE_MS = 4000;
@@ -19,6 +20,7 @@ export class PlaybackService {
   readonly manual = signal(false);
   readonly masterVolume = signal(1);
   readonly nowPlaying = signal<Track | null>(null);
+  readonly paused = signal(false);
 
   private voice: VoiceHandle | null = null;
   private generation = 0;
@@ -35,7 +37,7 @@ export class PlaybackService {
       });
       if (action.type !== 'play') return;
       const track = this.library.tracks().find((item) => item.id === action.trackId);
-      if (track) this.playAmbient(track, action.fadeInMs, action.fadeOutMs, action.volume);
+      if (track) this.playAmbient(track, action.fadeInMs, action.fadeOutMs, action.volume, this.paused());
     });
   }
 
@@ -46,7 +48,23 @@ export class PlaybackService {
 
   playManual(track: Track): void {
     this.manual.set(true);
+    this.paused.set(false);
     this.playAmbient(track, MANUAL_FADE_MS, MANUAL_FADE_MS, 1);
+  }
+
+  togglePause(): void {
+    if (this.paused()) {
+      this.voice?.resume();
+      this.paused.set(false);
+      return;
+    }
+    if (this.voice && this.nowPlaying()) {
+      this.voice.pause();
+      this.paused.set(true);
+      return;
+    }
+    this.paused.set(false);
+    this.backToAuto();
   }
 
   hold(): void {
@@ -62,6 +80,7 @@ export class PlaybackService {
     this.voice = null;
     this.generation += 1;
     this.nowPlaying.set(null);
+    this.paused.set(false);
     this.manual.set(true);
   }
 
@@ -83,10 +102,10 @@ export class PlaybackService {
   setMasterVolume(volume: number): void {
     const clamped = Math.min(1, Math.max(0, volume));
     this.masterVolume.set(clamped);
-    this.backend.setMasterVolume(clamped);
+    this.backend.setMasterVolume(perceivedVolumeGain(clamped));
   }
 
-  private playAmbient(track: Track, fadeInMs: number, fadeOutMs: number, bindingVolume: number): void {
+  private playAmbient(track: Track, fadeInMs: number, fadeOutMs: number, bindingVolume: number, pauseAfterStart = false): void {
     this.voice?.stop(fadeOutMs);
     const generation = ++this.generation;
     this.voice = this.backend.play(
@@ -105,5 +124,6 @@ export class PlaybackService {
       },
     );
     this.nowPlaying.set(track);
+    if (pauseAfterStart) this.voice?.pause();
   }
 }

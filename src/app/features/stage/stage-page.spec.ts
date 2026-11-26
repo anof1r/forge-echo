@@ -17,6 +17,7 @@ describe('StagePage', () => {
     started: ReturnType<typeof signal<boolean>>;
     manual: ReturnType<typeof signal<boolean>>;
     masterVolume: ReturnType<typeof signal<number>>;
+    paused: ReturnType<typeof signal<boolean>>;
     nowPlaying: ReturnType<typeof signal<Track | null>>;
     startSession: ReturnType<typeof vi.fn>;
     playManual: ReturnType<typeof vi.fn>;
@@ -24,6 +25,7 @@ describe('StagePage', () => {
     backToAuto: ReturnType<typeof vi.fn>;
     hold: ReturnType<typeof vi.fn>;
     stopAmbient: ReturnType<typeof vi.fn>;
+    togglePause: ReturnType<typeof vi.fn>;
     setMasterVolume: ReturnType<typeof vi.fn>;
   };
   let stageState: ReturnType<typeof signal<StageState>>;
@@ -44,6 +46,7 @@ describe('StagePage', () => {
       started: signal(false),
       manual: signal(false),
       masterVolume: signal(1),
+      paused: signal(false),
       nowPlaying: signal<Track | null>(null),
       startSession: vi.fn().mockImplementation(async () => playback.started.set(true)),
       playManual: vi.fn(),
@@ -51,6 +54,7 @@ describe('StagePage', () => {
       backToAuto: vi.fn(),
       hold: vi.fn(),
       stopAmbient: vi.fn(),
+      togglePause: vi.fn().mockImplementation(() => playback.paused.update((value) => !value)),
       setMasterVolume: vi.fn(),
     };
     stageState = signal<StageState>({
@@ -133,6 +137,19 @@ describe('StagePage', () => {
       expect(query('[data-test="mode"] [aria-checked="true"]').textContent).toContain('Follow scenes');
     });
 
+    it('puts the current scene and playback status in a clear summary', () => {
+      // Arrange
+      playback.nowPlaying.set(track('t1'));
+
+      // Act
+      render();
+
+      // Assert
+      expect(query('[data-test="scene-summary"]').textContent).toContain('Tavern');
+      expect(query('[data-test="playback-summary"]').textContent).toContain('Track t1');
+      expect(query('[data-test="stage-status"]').textContent).toContain('Following scenes');
+    });
+
     it('shows the hold mode when the sound is taken over manually', () => {
       // Arrange
       playback.manual.set(true);
@@ -166,15 +183,19 @@ describe('StagePage', () => {
       // Assert
       expect(playback.hold).toHaveBeenCalledTimes(1);
     });
-    it('stops the ambient track', () => {
+    it('shows a pause control and changes it to play when paused', () => {
       // Arrange
       render();
 
       // Act
-      query<HTMLButtonElement>('[data-test="stop"]').click();
+      query<HTMLButtonElement>('[data-test="play-pause"]').click();
+      fixture.detectChanges();
 
       // Assert
-      expect(playback.stopAmbient).toHaveBeenCalledTimes(1);
+      expect(playback.togglePause).toHaveBeenCalledTimes(1);
+      expect(element.querySelector('[data-test="stop"]')).toBeNull();
+      expect(query<HTMLButtonElement>('[data-test="play-pause"]').getAttribute('aria-label')).toBe('Resume ambient sound');
+      expect(query('[data-test="play-pause"]').textContent).toContain('Play');
     });
 
     it('plays an ambient track manually when tapped', () => {

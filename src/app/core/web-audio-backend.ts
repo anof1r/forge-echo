@@ -52,6 +52,7 @@ export class WebAudioBackend extends AudioBackend {
 
     let finished = false;
     let stopping = false;
+    let paused = false;
     let timer: ReturnType<typeof setInterval> | null = null;
     const voice: ActiveVoice = { recover: () => recover() };
 
@@ -119,6 +120,17 @@ export class WebAudioBackend extends AudioBackend {
     }, finish);
 
     return {
+      pause: (): void => {
+        if (finished || paused || stopping) return;
+        paused = true;
+        element.pause();
+        if (typeof navigator !== 'undefined' && navigator.mediaSession) navigator.mediaSession.playbackState = 'paused';
+      },
+      resume: (): void => {
+        if (finished || !paused || stopping) return;
+        paused = false;
+        void element.play().then(() => this.announce(), finish);
+      },
       stop: (fadeOutMs: number): void => {
         if (finished) return;
         if (fadeOutMs <= 0) return finish();

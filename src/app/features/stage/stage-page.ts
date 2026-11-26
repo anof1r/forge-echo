@@ -5,13 +5,12 @@ import { Track } from '../../core/models';
 import { PlaybackService } from '../../core/playback.service';
 import { StageStateService } from '../../core/stage-state.service';
 import { Icon } from '../../ui/icon';
-import { IconButton } from '../../ui/icon-button';
 import { IntensitySlider } from '../../ui/intensity-slider';
 import { ModeToggle, ToggleOption } from '../../ui/mode-toggle';
 
 @Component({
   selector: 'app-stage-page',
-  imports: [Icon, IconButton, IntensitySlider, ModeToggle],
+  imports: [Icon, IntensitySlider, ModeToggle],
   templateUrl: './stage-page.html',
   styleUrl: './stage-page.scss',
 })

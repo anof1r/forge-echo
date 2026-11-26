@@ -9,78 +9,129 @@
   </section>
 } @else {
   <section class="stage">
-    <div class="statuses">
-      <p class="status" data-test="connection" [class.status--offline]="!battleForgeOnline()">
-        <span class="status__dot"></span>
-        {{ battleForgeOnline() ? 'Battle Forge connected' : 'Battle Forge offline' }}
-      </p>
-      @if (stage.state().contract === 'incompatible') {
-        <p class="status status--offline" data-test="contract-warning">
-          <span class="status__dot"></span>
-          This Battle Forge version speaks a different contract. Please update Forge Echo or Battle Forge.
-        </p>
-      }
-    </div>
+    <header class="stage__header">
+      <div>
+        <p class="eyebrow">Live soundboard</p>
+        <h1>Stage</h1>
+      </div>
+      <div class="connection" data-test="connection" [class.connection--offline]="!battleForgeOnline()">
+        <span class="connection__dot"></span>
+        <span>{{ battleForgeOnline() ? 'Battle Forge online' : 'Battle Forge offline' }}</span>
+      </div>
+    </header>
 
-    <article class="now" data-test="now-playing">
-      @if (currentSlide(); as slide) {
-        <div class="slide" data-test="current-slide">
-          <img class="slide__thumb" alt="" [src]="slide.imageUrl" />
-          <span class="slide__name">{{ slide.name }}</span>
+    @if (stage.state().contract === 'incompatible') {
+      <p class="warning" data-test="contract-warning">This Battle Forge version speaks a different contract. Please update Forge Echo or Battle Forge.</p>
+    }
+
+    <section class="overview" aria-label="Session overview">
+      <article class="scene-card" data-test="scene-summary">
+        @if (currentSlide(); as slide) {
+          <img class="scene-card__image" alt="" [src]="slide.imageUrl" />
+          <div class="scene-card__shade"></div>
+          <div class="scene-card__content" data-test="current-slide">
+            <p class="eyebrow">Current scene</p>
+            <h2>{{ slide.name }}</h2>
+          </div>
+        } @else {
+          <div class="scene-card__empty">
+            <p class="eyebrow">Current scene</p>
+            <h2>Waiting for a scene</h2>
+            <p>Choose a slide in Battle Forge to see it here.</p>
+          </div>
+        }
+      </article>
+
+      <article class="playback-card" data-test="playback-summary">
+        <div class="playback-card__top">
+          <span class="playing-indicator" [class.playing-indicator--silent]="!playback.nowPlaying()"></span>
+          <p class="eyebrow">Now playing</p>
         </div>
-      }
-      <p class="label">Now playing</p>
-      <p class="title">{{ playback.nowPlaying()?.name ?? 'Silence' }}</p>
-    </article>
+        <h2 data-test="now-playing">{{ playback.nowPlaying()?.name ?? 'Silence' }}</h2>
+        <p class="playback-card__detail">{{ playback.nowPlaying() ? 'Ambient sound' : 'No ambient sound' }}</p>
+      </article>
+    </section>
 
-    <section class="controls">
-      <app-mode-toggle
-        data-test="mode"
-        label="Playback mode"
-        [options]="modes"
-        [value]="playback.manual() ? 'manual' : 'auto'"
-        (valueChange)="setMode($event)"
-      />
-      <div class="controls__volume">
+    <section class="control-panel" aria-label="Playback controls">
+      <div class="control-panel__top">
+        <div>
+          <p class="eyebrow">Playback</p>
+          <p class="stage-status" data-test="stage-status">{{ playback.manual() ? 'Holding current sound' : 'Following scenes' }}</p>
+        </div>
+        <app-mode-toggle
+          data-test="mode"
+          label="Playback mode"
+          [options]="modes"
+          [value]="playback.manual() ? 'manual' : 'auto'"
+          (valueChange)="setMode($event)"
+        />
+      </div>
+      <div class="control-panel__bottom">
         <app-intensity-slider
-          class="controls__slider"
+          class="control-panel__slider"
           data-test="master-volume"
-          label="Volume"
+          label="Master volume"
           [value]="playback.masterVolume()"
           (valueChange)="playback.setMasterVolume($event)"
         />
-        <app-icon-button data-test="stop" icon="stop" label="Stop" (click)="playback.stopAmbient()" />
+        <div class="transport">
+          <button
+            type="button"
+            class="transport__button transport__button--primary"
+            data-test="play-pause"
+            [attr.aria-label]="playback.paused() ? 'Resume ambient sound' : 'Pause ambient sound'"
+            (click)="playback.togglePause()"
+          >
+            <app-icon [name]="playback.paused() ? 'play' : 'pause'" />
+            <span>{{ playback.paused() ? 'Play' : 'Pause' }}</span>
+          </button>
+        </div>
       </div>
     </section>
 
-    <section class="group">
-      <h2 class="label"><app-icon name="effects" /> One-shots</h2>
+    <section class="group" aria-labelledby="effects-heading">
+      <div class="group__heading">
+        <div>
+          <p class="eyebrow">Quick triggers</p>
+          <h2 id="effects-heading"><app-icon name="effects" /> Sound effects</h2>
+        </div>
+        <span class="count">{{ oneShots().length }}</span>
+      </div>
       <div class="pads">
         @for (track of oneShots(); track track.id) {
           <button type="button" class="pad" [attr.data-test]="'oneshot-' + track.id" (click)="playback.playOneShot(track)">
-            {{ track.name }}
+            <span class="pad__play" aria-hidden="true">+</span>
+            <span>{{ track.name }}</span>
           </button>
         } @empty {
-          <p class="muted">Add one-shot sounds in the Library tab.</p>
+          <p class="empty-note">Add one-shot sounds in the Library tab.</p>
         }
       </div>
     </section>
 
-    <section class="group">
-      <h2 class="label"><app-icon name="volume" /> Ambient</h2>
-      <div class="list">
+    <section class="group" aria-labelledby="ambient-heading">
+      <div class="group__heading">
+        <div>
+          <p class="eyebrow">Manual selection</p>
+          <h2 id="ambient-heading"><app-icon name="volume" /> Ambient tracks</h2>
+        </div>
+        <span class="count">{{ ambient().length }}</span>
+      </div>
+      <div class="ambient-list">
         @for (track of ambient(); track track.id) {
           <button
             type="button"
-            class="item"
-            [class.item--active]="playback.nowPlaying()?.id === track.id"
+            class="ambient-item"
+            [class.ambient-item--active]="playback.nowPlaying()?.id === track.id"
             [attr.data-test]="'ambient-' + track.id"
             (click)="playAmbient(track)"
           >
-            {{ track.name }}
+            <span class="ambient-item__state" aria-hidden="true"></span>
+            <span>{{ track.name }}</span>
+            @if (playback.nowPlaying()?.id === track.id) { <span class="ambient-item__tag">Playing</span> }
           </button>
         } @empty {
-          <p class="muted">Add ambient tracks in the Library tab.</p>
+          <p class="empty-note">Add ambient tracks in the Library tab.</p>
         }
       </div>
     </section>

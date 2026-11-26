@@ -9,6 +9,8 @@ export interface PlayRequest {
 
 export interface VoiceHandle {
   stop(fadeOutMs: number): void;
+  pause(): void;
+  resume(): void;
 }
 
 // Abstraction over the browser audio stack so playback rules can be tested without a browser.

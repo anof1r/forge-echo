@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export const ICON_NAMES = ['stage', 'library', 'effects', 'settings', 'stop', 'volume', 'hold', 'follow'] as const;
+export const ICON_NAMES = ['stage', 'library', 'effects', 'settings', 'stop', 'play', 'pause', 'volume', 'hold', 'follow'] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 
 // Thin-stroke line icons, drawn for this app on a 24px grid.
@@ -28,6 +28,12 @@ export type IconName = (typeof ICON_NAMES)[number];
         }
         @case ('stop') {
           <rect x="7" y="7" width="10" height="10" rx="2.2" />
+        }
+        @case ('play') {
+          <path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" stroke="none" />
+        }
+        @case ('pause') {
+          <path d="M8.5 6v12M15.5 6v12" stroke-width="2.5" />
         }
         @case ('volume') {
           <path d="M5 10v4h3l4 3.5v-11L8 10H5Z" />

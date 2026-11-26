@@ -9,10 +9,13 @@ import { StageStateService } from './stage-state.service';
 
 class FakeVoice implements VoiceHandle {
   stoppedWith: number | null = null;
+  paused = false;
   constructor(readonly request: PlayRequest, readonly onEnded: () => void) {}
   stop(fadeOutMs: number): void {
     this.stoppedWith = fadeOutMs;
   }
+  pause(): void { this.paused = true; }
+  resume(): void { this.paused = false; }
 }
 
 class FakeBackend extends AudioBackend {
@@ -180,6 +183,23 @@ describe('PlaybackService', () => {
     expect(backend.voices).toHaveLength(1);
   });
 
+  it('pauses and resumes the current ambient voice without changing follow mode', async () => {
+    // Arrange
+    await service.startSession();
+    select('s1');
+
+    // Act
+    service.togglePause();
+    const pausedAfterFirstTap = service.paused();
+    service.togglePause();
+
+    // Assert
+    expect(pausedAfterFirstTap).toBe(true);
+    expect(service.paused()).toBe(false);
+    expect(service.manual()).toBe(false);
+    expect(backend.voices).toHaveLength(1);
+  });
+
   it('returning to auto switches to the track of the current slide', async () => {
     // Arrange
     await service.startSession();
@@ -252,13 +272,17 @@ describe('PlaybackService', () => {
     // Arrange - fresh service
 
     // Act
-    service.setMasterVolume(0.3);
-    const normal = backend.master;
+    service.setMasterVolume(0.03);
+    const quietGain = backend.master;
+    service.setMasterVolume(0);
+    const silentGain = backend.master;
     service.setMasterVolume(7);
+    const maxGain = backend.master;
 
     // Assert
-    expect(normal).toBe(0.3);
-    expect(backend.master).toBe(1);
+    expect(quietGain).toBeCloseTo(10 ** (-58.2 / 20), 8);
+    expect(silentGain).toBe(0);
+    expect(maxGain).toBe(1);
     expect(service.masterVolume()).toBe(1);
   });
 });
