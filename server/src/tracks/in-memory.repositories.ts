@@ -1,5 +1,5 @@
-import { BindingRepository, TrackRepository } from './repositories';
-import { Binding, Track, TrackPatch } from './track.model';
+import { BindingRepository, OneShotGroupRepository, TrackRepository } from './repositories';
+import { Binding, OneShotGroup, Track, TrackPatch } from './track.model';
 
 export class InMemoryTrackRepository extends TrackRepository {
   private readonly items: Track[] = [];
@@ -48,5 +48,31 @@ export class InMemoryBindingRepository extends BindingRepository {
 
   async removeByTrack(trackId: string): Promise<void> {
     this.items = this.items.filter((item) => item.trackId !== trackId);
+  }
+}
+
+export class InMemoryOneShotGroupRepository extends OneShotGroupRepository {
+  private readonly items: OneShotGroup[] = [];
+
+  async list(): Promise<OneShotGroup[]> {
+    return this.items.map((item) => ({ ...item }));
+  }
+
+  async insert(group: OneShotGroup): Promise<void> {
+    this.items.push({ ...group });
+  }
+
+  async rename(id: string, name: string, now: number): Promise<OneShotGroup | null> {
+    const group = this.items.find((item) => item.id === id);
+    if (!group) return null;
+    Object.assign(group, { name, updatedAt: now });
+    return { ...group };
+  }
+
+  async remove(id: string): Promise<boolean> {
+    const index = this.items.findIndex((item) => item.id === id);
+    if (index < 0) return false;
+    this.items.splice(index, 1);
+    return true;
   }
 }

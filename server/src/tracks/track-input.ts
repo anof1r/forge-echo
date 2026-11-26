@@ -46,6 +46,18 @@ export function parseTrackPatch(input: unknown): ParseResult<TrackPatch> {
     if (typeof input['loop'] !== 'boolean') return { ok: false, error: 'loop must be a boolean.' };
     patch.loop = input['loop'];
   }
+  if ('groupIds' in input) {
+    const groupIds = input['groupIds'];
+    if (
+      !Array.isArray(groupIds) ||
+      groupIds.length > 40 ||
+      groupIds.some((id) => typeof id !== 'string' || !ID_PATTERN.test(id)) ||
+      new Set(groupIds).size !== groupIds.length
+    ) {
+      return { ok: false, error: 'groupIds must be a list of unique valid identifiers.' };
+    }
+    patch.groupIds = groupIds as string[];
+  }
 
   if (patch.startMs !== undefined && typeof patch.endMs === 'number' && patch.endMs <= patch.startMs) {
     return { ok: false, error: 'endMs must be greater than startMs.' };
@@ -66,4 +78,11 @@ export function parseBindingInput(input: unknown): ParseResult<BindingInput> {
   if (!isNonNegativeInt(fadeOutMs) || fadeOutMs > MAX_FADE_MS) return { ok: false, error: 'fadeOutMs is invalid.' };
   if (!isUnit(volume)) return { ok: false, error: 'volume must be between 0 and 1.' };
   return { ok: true, value: { trackId, fadeInMs, fadeOutMs, volume } };
+}
+
+export function parseOneShotGroupName(input: unknown): ParseResult<string> {
+  if (!isRecord(input)) return { ok: false, error: 'Body must be an object.' };
+  const name = typeof input['name'] === 'string' ? input['name'].trim() : '';
+  if (name.length < 1 || name.length > 48) return { ok: false, error: 'name must be 1-48 characters.' };
+  return { ok: true, value: name };
 }

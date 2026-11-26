@@ -28,6 +28,9 @@ const fakeResponse = (): FakeResponse => ({
 const upload = (content: string, mimetype = 'audio/mpeg'): Express.Multer.File =>
   ({ buffer: Buffer.from(content), mimetype, size: content.length, originalname: 'Tavern Night.mp3' }) as Express.Multer.File;
 
+const imageUpload = (content: string, mimetype = 'image/webp'): Express.Multer.File =>
+  ({ buffer: Buffer.from(content), mimetype, size: content.length, originalname: 'tile.webp' }) as Express.Multer.File;
+
 async function readStream(result: { getStream(): NodeJS.ReadableStream }): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of result.getStream()) chunks.push(Buffer.from(chunk));
@@ -77,6 +80,33 @@ describe('TracksController and BindingsController', () => {
 
     // Assert
     expect(track).toMatchObject({ name: 'Door slam', kind: 'oneshot', loop: false });
+  });
+
+  it('uploads and serves artwork for a one-shot tile', async () => {
+    // Arrange
+    const { track: sound } = await tracksController.upload({ name: 'Axe', kind: 'oneshot' }, upload('sound'));
+
+    // Act
+    const result = await tracksController.uploadArtwork(sound.id, imageUpload('tile-image'));
+    const response = fakeResponse();
+    const artwork = await tracksController.artwork(sound.id, response);
+    const content = await readStream(artwork);
+
+    // Assert
+    expect(result.track.imageFile).toMatch(/^artwork\/.+\.webp$/);
+    expect(content).toBe('tile-image');
+    expect(response.headers['Content-Type']).toBe('image/webp');
+  });
+
+  it('rejects unsupported artwork types', async () => {
+    // Arrange
+    const { track: sound } = await tracksController.upload({ name: 'Axe', kind: 'oneshot' }, upload('sound'));
+
+    // Act
+    const action = tracksController.uploadArtwork(sound.id, imageUpload('not an image', 'image/gif'));
+
+    // Assert
+    await expect(action).rejects.toThrow(/jpeg, png, or webp/i);
   });
 
   it('rejects an unsupported mime type and stores nothing', async () => {

@@ -26,6 +26,7 @@ export class LibraryPage {
 
   protected readonly uploadKind = signal<TrackKind>('ambient');
   protected readonly pendingDelete = signal<string | null>(null);
+  protected readonly pendingDeleteGroup = signal<string | null>(null);
   protected readonly waveformFor = signal<string | null>(null);
 
   protected readonly ambientTracks = computed(() => this.store.tracks().filter((track) => track.kind === 'ambient'));
@@ -70,6 +71,47 @@ export class LibraryPage {
 
   protected setLoop(track: Track, event: Event): void {
     void this.store.patch(track.id, { loop: (event.target as HTMLInputElement).checked });
+  }
+
+  protected isInGroup(track: Track, groupId: string): boolean {
+    return (track.groupIds ?? []).includes(groupId);
+  }
+
+  protected toggleGroup(track: Track, groupId: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const groupIds = new Set(track.groupIds ?? []);
+    if (checked) groupIds.add(groupId);
+    else groupIds.delete(groupId);
+    void this.store.patch(track.id, { groupIds: Array.from(groupIds) });
+  }
+
+  protected async createGroup(name: string): Promise<void> {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.length > 48) return;
+    await this.store.createOneShotGroup(trimmed);
+  }
+
+  protected async renameGroup(groupId: string, name: string): Promise<void> {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.length > 48) return;
+    await this.store.renameOneShotGroup(groupId, trimmed);
+  }
+
+  protected requestDeleteGroup(groupId: string): void {
+    if (this.pendingDeleteGroup() === groupId) {
+      this.pendingDeleteGroup.set(null);
+      void this.store.deleteOneShotGroup(groupId);
+      return;
+    }
+    this.pendingDeleteGroup.set(groupId);
+  }
+
+  protected async setArtwork(track: Track, event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) return;
+    await this.store.uploadArtwork(track.id, file);
   }
 
   protected toggleWaveform(track: Track): void {

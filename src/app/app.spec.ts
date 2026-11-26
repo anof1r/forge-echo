@@ -55,6 +55,20 @@ describe('App shell', () => {
     expect(links.map((link) => link.getAttribute('href'))).toEqual(['/stage', '/library']);
   });
 
+  it('keeps the app viewport fixed and scrolls content inside the main area', () => {
+    // Arrange
+    const element = host();
+    const main = element.querySelector('.app-main') as HTMLElement;
+
+    // Act
+    const appHeight = getComputedStyle(element).height;
+    const mainOverflow = getComputedStyle(main).overflowY;
+
+    // Assert
+    expect(appHeight).toBe('100dvh');
+    expect(mainOverflow).toBe('auto');
+  });
+
   it('opens the Stage tab by default because it is used during play', async () => {
     // Arrange
     const harness = await render();

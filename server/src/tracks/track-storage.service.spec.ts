@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TrackStorageService, extensionForMime } from './track-storage.service';
+import { TrackStorageService, extensionForImageMime, extensionForMime } from './track-storage.service';
 
 describe('extensionForMime', () => {
   it.each([
@@ -36,6 +36,18 @@ describe('extensionForMime', () => {
   });
 });
 
+describe('extensionForImageMime', () => {
+  it.each([['image/jpeg', 'jpg'], ['image/png', 'png'], ['image/webp', 'webp']])('maps %s to %s', (mime, extension) => {
+    // Arrange - mime comes from the table
+
+    // Act
+    const result = extensionForImageMime(mime);
+
+    // Assert
+    expect(result).toBe(extension);
+  });
+});
+
 describe('TrackStorageService', () => {
   let root: string;
   let storage: TrackStorageService;
@@ -59,6 +71,20 @@ describe('TrackStorageService', () => {
     // Assert
     expect(key).toMatch(/^tracks\/[0-9a-f-]+\.mp3$/);
     expect(await readFile(join(root, key))).toEqual(buffer);
+  });
+
+  it('saves and opens a group tile image under artwork/', async () => {
+    // Arrange
+    const buffer = Buffer.from('image-bytes');
+
+    // Act
+    const key = await storage.saveArtwork(buffer, 'webp');
+    const opened = await storage.openArtwork(key);
+
+    // Assert
+    expect(key).toMatch(/^artwork\/[0-9a-f-]+\.webp$/);
+    expect(opened?.size).toBe(buffer.length);
+    expect(opened?.path).toBe(join(root, key));
   });
 
   it('opens a saved file and reports its size', async () => {

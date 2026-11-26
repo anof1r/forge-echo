@@ -19,6 +19,7 @@ describe('LibraryPage', () => {
   let store: {
     tracks: ReturnType<typeof signal<Track[]>>;
     bindings: ReturnType<typeof signal<Binding[]>>;
+    oneShotGroups: ReturnType<typeof signal<{ id: string; name: string; createdAt: number; updatedAt: number }[]>>;
     error: ReturnType<typeof signal<string | null>>;
     refresh: ReturnType<typeof vi.fn>;
     upload: ReturnType<typeof vi.fn>;
@@ -26,6 +27,10 @@ describe('LibraryPage', () => {
     remove: ReturnType<typeof vi.fn>;
     bind: ReturnType<typeof vi.fn>;
     unbind: ReturnType<typeof vi.fn>;
+    createOneShotGroup: ReturnType<typeof vi.fn>;
+    renameOneShotGroup: ReturnType<typeof vi.fn>;
+    deleteOneShotGroup: ReturnType<typeof vi.fn>;
+    uploadArtwork: ReturnType<typeof vi.fn>;
   };
   let waveformHandlers: WaveformHandlers;
   const waveformCreate = vi.fn();
@@ -49,6 +54,7 @@ describe('LibraryPage', () => {
     store = {
       tracks: signal([track('t1'), track('shot', { kind: 'oneshot', loop: false, name: 'Door' })]),
       bindings: signal([binding('s1', 't1')]),
+      oneShotGroups: signal([{ id: 'weapons', name: 'Weapons', createdAt: 1, updatedAt: 1 }]),
       error: signal<string | null>(null),
       refresh: vi.fn().mockResolvedValue(undefined),
       upload: vi.fn().mockResolvedValue(undefined),
@@ -56,6 +62,10 @@ describe('LibraryPage', () => {
       remove: vi.fn().mockResolvedValue(undefined),
       bind: vi.fn().mockResolvedValue(undefined),
       unbind: vi.fn().mockResolvedValue(undefined),
+      createOneShotGroup: vi.fn().mockResolvedValue(undefined),
+      renameOneShotGroup: vi.fn().mockResolvedValue(undefined),
+      deleteOneShotGroup: vi.fn().mockResolvedValue(undefined),
+      uploadArtwork: vi.fn().mockResolvedValue(undefined),
     };
     waveformCreate.mockReset();
     waveformCreate.mockImplementation((_container, _url, _trim, handlers: WaveformHandlers) => {
@@ -69,7 +79,11 @@ describe('LibraryPage', () => {
         { provide: StageStateService, useValue: { state: signal(stage) } },
         {
           provide: ForgeApi,
-          useValue: { streamUrl: (id: string) => `/api/tracks/${id}/stream`, slideImageUrl: () => '/img.webp' },
+          useValue: {
+            streamUrl: (id: string) => `/api/tracks/${id}/stream`,
+            slideImageUrl: () => '/img.webp',
+            artworkUrl: (item: Track) => item.imageFile ? `/art/${item.id}.webp` : null,
+          },
         },
       ],
     });
@@ -94,6 +108,37 @@ describe('LibraryPage', () => {
     // Assert
     const names = Array.from(element.querySelectorAll<HTMLInputElement>('[data-test="track-name"]')).map((input) => input.value);
     expect(names).toEqual(['Track t1', 'Door']);
+  });
+
+  it('creates groups and assigns one-shot sounds to groups', () => {
+    // Arrange
+    render();
+    const name = element.querySelector<HTMLInputElement>('[data-test="new-group-name"]') as HTMLInputElement;
+    name.value = 'Combat';
+
+    // Act
+    element.querySelector<HTMLButtonElement>('[data-test="group-create"]')?.click();
+    const checkbox = element.querySelector<HTMLInputElement>('[data-test="assign-shot-weapons"]') as HTMLInputElement;
+    checkbox.click();
+
+    // Assert
+    expect(store.createOneShotGroup).toHaveBeenCalledWith('Combat');
+    expect(store.patch).toHaveBeenCalledWith('shot', { groupIds: ['weapons'] });
+  });
+
+  it('uploads an illustration for a one-shot tile', async () => {
+    // Arrange
+    render();
+    const input = element.querySelector<HTMLInputElement>('[data-test="artwork-shot"]') as HTMLInputElement;
+    const image = new File(['pixels'], 'door.webp', { type: 'image/webp' });
+    Object.defineProperty(input, 'files', { value: [image], configurable: true });
+
+    // Act
+    input.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
+    // Assert
+    expect(store.uploadArtwork).toHaveBeenCalledWith('shot', image);
   });
 
   it('uploads the chosen file with the selected kind', () => {

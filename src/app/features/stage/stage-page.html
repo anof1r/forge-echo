@@ -95,16 +95,34 @@
           <p class="eyebrow">Quick triggers</p>
           <h2 id="effects-heading"><app-icon name="effects" /> Sound effects</h2>
         </div>
-        <span class="count">{{ oneShots().length }}</span>
+        <span class="count">{{ visibleOneShots().length }}</span>
       </div>
+      @if (oneShotGroupOptions().length) {
+        <label class="effect-group-picker">
+          Category
+          <select data-test="oneshot-group-select" [value]="activeOneShotGroupId()" (change)="setOneShotGroup($any($event.target).value)">
+            @for (group of oneShotGroupOptions(); track group.id) {
+              <option [value]="group.id">{{ group.name }}</option>
+            }
+          </select>
+        </label>
+      }
       <div class="pads">
-        @for (track of oneShots(); track track.id) {
+        @for (track of visibleOneShots(); track track.id) {
           <button type="button" class="pad" [attr.data-test]="'oneshot-' + track.id" (click)="playback.playOneShot(track)">
-            <span class="pad__play" aria-hidden="true">+</span>
-            <span>{{ track.name }}</span>
+            @if (artworkUrl(track); as imageUrl) {
+              <img class="pad__image" [src]="imageUrl" alt="" />
+            } @else {
+              <span class="pad__play" aria-hidden="true">+</span>
+            }
+            <span class="pad__name">{{ track.name }}</span>
           </button>
         } @empty {
-          <p class="empty-note">Add one-shot sounds in the Library tab.</p>
+          @if (oneShotGroupOptions().length) {
+            <p class="empty-note">No sounds in this group yet. Add sounds in the Library tab.</p>
+          } @else {
+            <p class="empty-note">Create a sound effect group in the Library tab.</p>
+          }
         }
       </div>
     </section>

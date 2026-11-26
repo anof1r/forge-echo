@@ -22,9 +22,10 @@ import { parseRange } from '../media/http-range';
 import { BindingRepository, TrackRepository } from './repositories';
 import { ID_PATTERN, parseTrackPatch } from './track-input';
 import { Track } from './track.model';
-import { TrackStorageService, extensionForMime } from './track-storage.service';
+import { TrackStorageService, extensionForImageMime, extensionForMime } from './track-storage.service';
 
 const MAX_TRACK_BYTES = 200 * 1024 * 1024;
+const MAX_ARTWORK_BYTES = 5 * 1024 * 1024;
 
 interface StreamResponse {
   status(code: number): unknown;
@@ -72,6 +73,8 @@ export class TracksController {
       endMs: null,
       volume: 1,
       loop: kind === 'ambient',
+      groupIds: [],
+      imageFile: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -102,7 +105,44 @@ export class TracksController {
     await this.bindings.removeByTrack(id);
     await this.tracks.remove(id);
     await this.storage.remove(track.file);
+    if (track.imageFile) await this.storage.remove(track.imageFile);
     return { success: true };
+  }
+
+  @Post(':id/artwork')
+  @UseInterceptors(FileInterceptor('file', { limits: { files: 1, fileSize: MAX_ARTWORK_BYTES } }))
+  async uploadArtwork(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ): Promise<{ track: Track }> {
+    this.assertId(id);
+    const existing = await this.tracks.get(id);
+    if (!existing) throw new NotFoundException('Track was not found.');
+    if (!file) throw new BadRequestException('An image file is required.');
+    const extension = extensionForImageMime(file.mimetype);
+    if (!extension) throw new BadRequestException('Artwork must be JPEG, PNG, or WebP.');
+
+    const imageFile = await this.storage.saveArtwork(file.buffer, extension);
+    const track = await this.tracks.update(id, { imageFile }, Date.now());
+    if (!track) {
+      await this.storage.remove(imageFile);
+      throw new NotFoundException('Track was not found.');
+    }
+    if (existing.imageFile) await this.storage.remove(existing.imageFile);
+    return { track };
+  }
+
+  @Get(':id/artwork')
+  async artwork(@Param('id') id: string, @Res({ passthrough: true }) response: StreamResponse): Promise<StreamableFile> {
+    this.assertId(id);
+    const track = await this.tracks.get(id);
+    const file = track?.imageFile ? await this.storage.openArtwork(track.imageFile) : null;
+    if (!track || !file || !track.imageFile) throw new NotFoundException('Artwork was not found.');
+    const extension = track.imageFile.split('.').pop();
+    response.setHeader('Content-Type', extension === 'png' ? 'image/png' : extension === 'webp' ? 'image/webp' : 'image/jpeg');
+    response.setHeader('Cache-Control', 'private, max-age=3600');
+    response.setHeader('Content-Length', file.size);
+    return new StreamableFile(createReadStream(file.path));
   }
 
   @Get(':id/stream')

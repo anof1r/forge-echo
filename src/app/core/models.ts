@@ -11,11 +11,20 @@ export interface Track {
   endMs: number | null;
   volume: number;
   loop: boolean;
+  groupIds?: string[];
+  imageFile?: string | null;
   createdAt: number;
   updatedAt: number;
 }
 
-export type TrackPatch = Partial<Pick<Track, 'name' | 'kind' | 'startMs' | 'endMs' | 'volume' | 'loop'>>;
+export type TrackPatch = Partial<Pick<Track, 'name' | 'kind' | 'startMs' | 'endMs' | 'volume' | 'loop' | 'groupIds'>>;
+
+export interface OneShotGroup {
+  id: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+}
 
 export interface Binding {
   slideId: string;

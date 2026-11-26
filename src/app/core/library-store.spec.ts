@@ -19,9 +19,14 @@ describe('LibraryStore', () => {
     api = {
       listTracks: vi.fn().mockResolvedValue([track('t1')]),
       listBindings: vi.fn().mockResolvedValue([binding('s1', 't1')]),
+      listOneShotGroups: vi.fn().mockResolvedValue([{ id: 'weapons', name: 'Weapons', createdAt: 1, updatedAt: 1 }]),
       uploadTrack: vi.fn().mockResolvedValue(track('t2')),
       patchTrack: vi.fn().mockResolvedValue({ ...track('t1'), name: 'Renamed' }),
       deleteTrack: vi.fn().mockResolvedValue(undefined),
+      uploadArtwork: vi.fn().mockResolvedValue({ ...track('t1'), imageFile: 'artwork/a.webp' }),
+      createOneShotGroup: vi.fn().mockResolvedValue({ id: 'combat', name: 'Combat', createdAt: 2, updatedAt: 2 }),
+      renameOneShotGroup: vi.fn().mockResolvedValue({ id: 'weapons', name: 'Gear', createdAt: 1, updatedAt: 2 }),
+      deleteOneShotGroup: vi.fn().mockResolvedValue(undefined),
       putBinding: vi.fn().mockResolvedValue(binding('s2', 't1')),
       deleteBinding: vi.fn().mockResolvedValue(undefined),
     };
@@ -38,6 +43,7 @@ describe('LibraryStore', () => {
     // Assert
     expect(store.tracks().map((item) => item.id)).toEqual(['t1']);
     expect(store.bindings().map((item) => item.slideId)).toEqual(['s1']);
+    expect(store.oneShotGroups().map((item) => item.name)).toEqual(['Weapons']);
   });
 
   it('puts an uploaded track first in the list', async () => {
@@ -60,6 +66,33 @@ describe('LibraryStore', () => {
 
     // Assert
     expect(store.tracks()[0].name).toBe('Renamed');
+  });
+
+  it('uploads artwork and updates the track', async () => {
+    // Arrange
+    await store.refresh();
+    const image = new File(['image'], 'axe.webp', { type: 'image/webp' });
+
+    // Act
+    await store.uploadArtwork('t1', image);
+
+    // Assert
+    expect(api['uploadArtwork']).toHaveBeenCalledWith('t1', image);
+    expect(store.tracks()[0].imageFile).toBe('artwork/a.webp');
+  });
+
+  it('creates, renames, and removes one-shot groups and clears removed assignments', async () => {
+    // Arrange
+    store.tracks.set([{ ...track('shot'), kind: 'oneshot', groupIds: ['weapons'] }]);
+
+    // Act
+    await store.createOneShotGroup('Combat');
+    await store.renameOneShotGroup('weapons', 'Gear');
+    await store.deleteOneShotGroup('weapons');
+
+    // Assert
+    expect(store.oneShotGroups().map((item) => item.name)).toEqual(['Combat']);
+    expect(store.tracks()[0].groupIds).toEqual([]);
   });
 
   it('drops the bindings of a removed track', async () => {

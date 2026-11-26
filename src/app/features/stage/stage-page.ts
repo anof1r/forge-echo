@@ -1,7 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ForgeApi } from '../../core/forge-api';
 import { LibraryStore } from '../../core/library-store';
-import { Track } from '../../core/models';
+import { OneShotGroup, Track } from '../../core/models';
 import { PlaybackService } from '../../core/playback.service';
 import { StageStateService } from '../../core/stage-state.service';
 import { Icon } from '../../ui/icon';
@@ -19,6 +19,8 @@ export class StagePage {
   private readonly library = inject(LibraryStore);
   protected readonly stage = inject(StageStateService);
   private readonly api = inject(ForgeApi);
+  private readonly unsortedGroupId = '__ungrouped__';
+  protected readonly selectedOneShotGroupId = signal('');
 
   protected readonly modes: ToggleOption[] = [
     { value: 'auto', label: 'Follow scenes' },
@@ -27,6 +29,26 @@ export class StagePage {
 
   protected readonly ambient = computed(() => this.library.tracks().filter((track) => track.kind === 'ambient'));
   protected readonly oneShots = computed(() => this.library.tracks().filter((track) => track.kind === 'oneshot'));
+  protected readonly oneShotGroupOptions = computed<OneShotGroup[]>(() => {
+    const groups = this.library.oneShotGroups();
+    const hasUngrouped = this.oneShots().some((track) => (track.groupIds ?? []).length === 0);
+    return hasUngrouped
+      ? [{ id: this.unsortedGroupId, name: 'Unsorted', createdAt: 0, updatedAt: 0 }, ...groups]
+      : groups;
+  });
+  protected readonly activeOneShotGroupId = computed(() => {
+    const groups = this.oneShotGroupOptions();
+    return groups.some((group) => group.id === this.selectedOneShotGroupId())
+      ? this.selectedOneShotGroupId()
+      : groups[0]?.id ?? '';
+  });
+  protected readonly visibleOneShots = computed(() => {
+    const groupId = this.activeOneShotGroupId();
+    if (!groupId) return [];
+    return this.oneShots().filter((track) =>
+      groupId === this.unsortedGroupId ? (track.groupIds ?? []).length === 0 : (track.groupIds ?? []).includes(groupId),
+    );
+  });
   protected readonly battleForgeOnline = computed(() => this.stage.state().connection === 'connected');
   protected readonly currentSlide = computed(() => {
     const { presentation, slides } = this.stage.state();
@@ -45,5 +67,13 @@ export class StagePage {
 
   protected playAmbient(track: Track): void {
     this.playback.playManual(track);
+  }
+
+  protected setOneShotGroup(groupId: string): void {
+    this.selectedOneShotGroupId.set(groupId);
+  }
+
+  protected artworkUrl(track: Track): string | null {
+    return this.api.artworkUrl(track);
   }
 }

@@ -19,6 +19,7 @@ The project is an independent companion to Battle Forge. It keeps its own sound 
 - Switch to Hold mode to keep the current track while slides change.
 - Pause and resume ambient playback without losing the current position.
 - Trigger one-shot sound effects from large touch-friendly buttons.
+- Organize one-shot effects into reusable groups and give each Stage tile its own image.
 - Upload and manage audio tracks, trim their start and end, set volume, and choose whether ambient tracks loop.
 - Install the client as a Progressive Web App (PWA) on a phone or tablet.
 
@@ -62,10 +63,10 @@ BATTLE_FORGE_URL=http://localhost:8080 npm run test:contract
 
 1. Start Battle Forge and open the story presentation or battle screen.
 2. Open Forge Echo on the device connected to the speakers and tap **Start session**. Browsers require a user gesture before audio can play.
-3. In **Library**, upload ambient tracks and one-shot effects.
+3. In **Library**, upload ambient tracks and one-shot effects. Create effect groups, assign one-shot sounds to one or more groups, and upload an image for each sound tile.
 4. Assign ambient tracks to the relevant slides. Set fade times for transitions if needed.
 5. Return to **Stage**. In **Follow scenes** mode, ambient playback follows the active Battle Forge slide. Use **Hold** to keep the current track during manual slide changes.
-6. Tap **Pause** or **Play** to pause or resume the current ambient track. Trigger one-shot effects from the sound effect pads.
+6. Choose a sound effect group and tap an image tile to play it. Tap **Pause** or **Play** to pause or resume the current ambient track.
 
 ### Install the PWA
 
@@ -109,6 +110,7 @@ Forge Echo — локальный саундборд для игр в D&D. Он 
 ### Возможности
 
 - Назначать фоновые треки слайдам истории Battle Forge и боевому экрану.
+- Создавать группы разовых эффектов, добавлять звук в несколько групп и назначать каждому звуку изображение для плитки на Stage.
 - Автоматически переключать фоновый звук при смене активного слайда, используя плавный переход.
 - Включать режим «Удержание», чтобы оставить текущую музыку при смене слайдов.
 - Ставить фоновый звук на паузу и продолжать воспроизведение с того же места.
@@ -156,10 +158,10 @@ BATTLE_FORGE_URL=http://localhost:8080 npm run test:contract
 
 1. Запустите Battle Forge и откройте презентацию истории или боевой экран.
 2. Откройте Forge Echo на устройстве, подключённом к колонкам, и нажмите **Start session**. Браузер требует нажатия перед первым запуском звука.
-3. Во вкладке **Library** загрузите фоновые треки и разовые эффекты.
+3. Во вкладке **Library** загрузите фоновые треки и разовые эффекты. Создайте группы, распределите эффекты по одной или нескольким группам и загрузите изображение для каждой плитки.
 4. Назначьте фоновые треки нужным слайдам. При необходимости настройте длительность плавных переходов.
 5. Вернитесь во вкладку **Stage**. В режиме **Follow scenes** музыка следует за активным слайдом Battle Forge. Включите **Hold**, если нужно сохранить текущий звук при ручной смене слайдов.
-6. Кнопкой **Pause** или **Play** приостанавливайте и продолжайте фоновый трек. Разовые эффекты запускаются кнопками в разделе звуковых эффектов.
+6. Выберите группу эффектов и нажмите на плитку с изображением, чтобы запустить звук. Кнопкой **Pause** или **Play** приостанавливайте и продолжайте фоновый трек.
 
 ### Установка PWA
 

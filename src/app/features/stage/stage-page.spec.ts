@@ -29,6 +29,8 @@ describe('StagePage', () => {
     setMasterVolume: ReturnType<typeof vi.fn>;
   };
   let stageState: ReturnType<typeof signal<StageState>>;
+  let tracks: ReturnType<typeof signal<Track[]>>;
+  let oneShotGroups: ReturnType<typeof signal<{ id: string; name: string; createdAt: number; updatedAt: number }[]>>;
   let element: HTMLElement;
   let fixture: ReturnType<typeof TestBed.createComponent<StagePage>>;
   const refresh = vi.fn().mockResolvedValue(undefined);
@@ -63,15 +65,23 @@ describe('StagePage', () => {
       presentation: { mode: 'story', activeSlideId: 's1' },
       slides: [{ id: 's1', name: 'Tavern', order: 0, mediaPath: '/media/slides/aa.webp?v=1' }],
     });
+    tracks = signal([track('t1'), track('t2'), track('shot', { kind: 'oneshot', name: 'Door', loop: false })]);
+    oneShotGroups = signal([]);
     TestBed.configureTestingModule({
       providers: [
         { provide: PlaybackService, useValue: playback },
         { provide: StageStateService, useValue: { state: stageState, serverReachable: signal(true) } },
         {
           provide: LibraryStore,
-          useValue: { refresh, tracks: signal([track('t1'), track('t2'), track('shot', { kind: 'oneshot', name: 'Door' })]) },
+          useValue: { refresh, tracks, oneShotGroups },
         },
-        { provide: ForgeApi, useValue: { slideImageUrl: () => '/img.webp' } },
+        {
+          provide: ForgeApi,
+          useValue: {
+            slideImageUrl: () => '/img.webp',
+            artworkUrl: (item: Track) => item.imageFile ? `/art/${item.id}.webp` : null,
+          },
+        },
       ],
     });
   });
@@ -219,6 +229,39 @@ describe('StagePage', () => {
       // Assert
       expect(playback.playOneShot).toHaveBeenCalledWith(expect.objectContaining({ id: 'shot' }));
       expect(element.querySelectorAll('[data-test^="ambient-"]')).toHaveLength(2);
+    });
+
+    it('shows image tiles for the selected one-shot group', () => {
+      // Arrange
+      tracks.set([
+        track('axe', { kind: 'oneshot', name: 'Axe', groupIds: ['weapons'], imageFile: 'artwork/axe.webp' }),
+        track('arrow', { kind: 'oneshot', name: 'Arrow', groupIds: ['weapons'] }),
+        track('spell', { kind: 'oneshot', name: 'Spell', groupIds: ['magic'] }),
+      ]);
+      oneShotGroups.set([
+        { id: 'weapons', name: 'Weapons', createdAt: 1, updatedAt: 1 },
+        { id: 'magic', name: 'Magic', createdAt: 2, updatedAt: 2 },
+      ]);
+
+      // Act
+      render();
+
+      // Assert
+      expect(query<HTMLSelectElement>('[data-test="oneshot-group-select"]').value).toBe('weapons');
+      expect(query('[data-test="oneshot-axe"]')).not.toBeNull();
+      expect(query('[data-test="oneshot-axe"] img').getAttribute('src')).toBe('/art/axe.webp');
+      expect(query('[data-test="oneshot-arrow"]')).not.toBeNull();
+      expect(element.querySelector('[data-test="oneshot-spell"]')).toBeNull();
+
+      // Act
+      const groupPicker = query<HTMLSelectElement>('[data-test="oneshot-group-select"]');
+      groupPicker.value = 'magic';
+      groupPicker.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      // Assert
+      expect(element.querySelector('[data-test="oneshot-spell"]')).not.toBeNull();
+      expect(element.querySelector('[data-test="oneshot-axe"]')).toBeNull();
     });
 
     it('changes the master volume from the intensity slider', () => {

@@ -22,6 +22,31 @@
     </div>
   </section>
 
+  <section class="card" data-test="oneshot-groups">
+    <h2>Sound effect groups</h2>
+    <p class="muted">Organize one-shot sounds into Stage categories.</p>
+    <div class="row">
+      <label class="grow">
+        New group
+        <input #newGroup data-test="new-group-name" maxlength="48" placeholder="Weapons" />
+      </label>
+      <button type="button" data-test="group-create" (click)="createGroup(newGroup.value); newGroup.value = ''">Create group</button>
+    </div>
+    <div class="group-manager">
+      @for (group of store.oneShotGroups(); track group.id) {
+        <div class="group-manager__row" [attr.data-test]="'group-' + group.id">
+          <input #groupName [value]="group.name" maxlength="48" [attr.aria-label]="'Group name ' + group.name" />
+          <button type="button" class="secondary" [attr.data-test]="'group-save-' + group.id" (click)="renameGroup(group.id, groupName.value)">Save</button>
+          <button type="button" class="danger" [attr.data-test]="'group-delete-' + group.id" (click)="requestDeleteGroup(group.id)">
+            {{ pendingDeleteGroup() === group.id ? 'Tap again to delete' : 'Delete' }}
+          </button>
+        </div>
+      } @empty {
+        <p class="muted">No groups yet. Create one, then add one-shot sounds to it.</p>
+      }
+    </div>
+  </section>
+
   <section>
     <h2>Tracks</h2>
     @for (track of store.tracks(); track track.id) {
@@ -37,6 +62,38 @@
           />
           <span class="badge">{{ track.kind === 'ambient' ? 'Ambient' : 'One-shot' }}</span>
         </div>
+
+        @if (track.kind === 'oneshot') {
+          <div class="oneshot-details" [attr.data-test]="'oneshot-details-' + track.id">
+            <div class="artwork-row">
+              @if (api.artworkUrl(track); as artworkUrl) {
+                <img class="artwork-preview" [src]="artworkUrl" [alt]="track.name" />
+              } @else {
+                <div class="artwork-preview artwork-preview--empty" aria-hidden="true">No image</div>
+              }
+              <label class="file">
+                Tile image
+                <input [attr.data-test]="'artwork-' + track.id" type="file" accept="image/jpeg,image/png,image/webp" (change)="setArtwork(track, $event)" />
+              </label>
+            </div>
+            <fieldset class="group-checks">
+              <legend>Groups</legend>
+              @for (group of store.oneShotGroups(); track group.id) {
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    [attr.data-test]="'assign-' + track.id + '-' + group.id"
+                    [checked]="isInGroup(track, group.id)"
+                    (change)="toggleGroup(track, group.id, $event)"
+                  />
+                  {{ group.name }}
+                </label>
+              } @empty {
+                <p class="muted">Create a group above to organize this sound.</p>
+              }
+            </fieldset>
+          </div>
+        }
 
         <button type="button" class="secondary" data-test="trim-waveform" (click)="toggleWaveform(track)">
           {{ waveformFor() === track.id ? 'Hide waveform' : 'Show waveform' }}

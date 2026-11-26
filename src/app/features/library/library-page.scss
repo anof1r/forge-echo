@@ -85,6 +85,70 @@ audio {
   border-radius: 0.4rem;
 }
 
+.group-manager,
+.oneshot-details {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.group-manager__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.4rem;
+}
+
+.secondary {
+  background: var(--surface-raised);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.artwork-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.artwork-preview {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+}
+
+.artwork-preview--empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.group-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.group-checks legend {
+  padding: 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.group-checks .check input {
+  width: 1.15rem;
+  min-height: 1.15rem;
+  margin: 0;
+  padding: 0;
+}
+
 .check {
   display: flex;
   align-items: center;

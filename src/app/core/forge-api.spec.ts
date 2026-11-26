@@ -58,6 +58,36 @@ describe('ForgeApi', () => {
     expect((await pending).startMs).toBe(500);
   });
 
+  it('uploads artwork for a track as multipart data', async () => {
+    // Arrange
+    const file = new File(['pixels'], 'axe.png', { type: 'image/png' });
+    const pending = api.uploadArtwork('t1', file);
+
+    // Act
+    const request = http.expectOne('/api/tracks/t1/artwork');
+    request.flush({ track: { id: 't1', imageFile: 'artwork/a.png' } });
+
+    // Assert
+    expect(request.request.method).toBe('POST');
+    expect((request.request.body as FormData).get('file')).toBe(file);
+    expect(await pending).toMatchObject({ imageFile: 'artwork/a.png' });
+  });
+
+  it('loads and creates one-shot groups', async () => {
+    // Arrange
+    const loading = api.listOneShotGroups();
+    const create = api.createOneShotGroup('Weapons');
+
+    // Act
+    const requests = http.match('/api/oneshot-groups');
+    requests.find((request) => request.request.method === 'GET')?.flush({ groups: [{ id: 'g1', name: 'Weapons' }] });
+    requests.find((request) => request.request.method === 'POST')?.flush({ group: { id: 'g1', name: 'Weapons' } });
+
+    // Assert
+    expect(await loading).toEqual([{ id: 'g1', name: 'Weapons' }]);
+    expect(await create).toEqual({ id: 'g1', name: 'Weapons' });
+  });
+
   it('puts and deletes a binding by slide id', async () => {
     // Arrange
     const put = api.putBinding('s1', { trackId: 't1', fadeInMs: 100 });
@@ -86,6 +116,19 @@ describe('ForgeApi', () => {
 
     // Assert
     expect(url).toBe('/api/tracks/t1/stream');
+  });
+
+  it('builds a versioned artwork url only for tracks with artwork', () => {
+    // Arrange
+    const track = { id: 't1', updatedAt: 42, imageFile: 'artwork/a.png' };
+
+    // Act
+    const url = api.artworkUrl(track as never);
+    const noArtwork = api.artworkUrl({ id: 't2', updatedAt: 1 } as never);
+
+    // Assert
+    expect(url).toBe('/api/tracks/t1/artwork?v=42');
+    expect(noArtwork).toBeNull();
   });
 
   it('builds a proxied slide image url that keeps the version', () => {

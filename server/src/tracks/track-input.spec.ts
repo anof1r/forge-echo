@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBindingInput, parseTrackPatch } from './track-input';
+import { parseBindingInput, parseOneShotGroupName, parseTrackPatch } from './track-input';
 
 describe('parseTrackPatch', () => {
   it('accepts a full valid patch and trims the name', () => {
@@ -84,6 +84,39 @@ describe('parseBindingInput', () => {
       ok: true,
       value: { trackId: 'abc-123', fadeInMs: 2000, fadeOutMs: 3000, volume: 0.8 },
     });
+  });
+
+  it('accepts a list of valid one-shot group ids', () => {
+    // Arrange
+    const input = { groupIds: ['weapons', 'combat-2'] };
+
+    // Act
+    const result = parseTrackPatch(input);
+
+    // Assert
+    expect(result).toEqual({ ok: true, value: { groupIds: ['weapons', 'combat-2'] } });
+  });
+
+  it('rejects invalid one-shot group ids', () => {
+    // Arrange
+    const input = { groupIds: ['valid', '../bad'] };
+
+    // Act
+    const result = parseTrackPatch(input);
+
+    // Assert
+    expect(result.ok).toBe(false);
+  });
+
+  it('accepts a trimmed one-shot group name', () => {
+    // Arrange
+    const input = { name: '  Weapons  ' };
+
+    // Act
+    const result = parseOneShotGroupName(input);
+
+    // Assert
+    expect(result).toEqual({ ok: true, value: 'Weapons' });
   });
 
   it('applies defaults for fades and volume', () => {

@@ -15,10 +15,20 @@ const MIME_EXTENSIONS: Record<string, string> = {
   'audio/flac': 'flac',
 };
 
-const KEY_PATTERN = /^tracks\/[0-9a-f-]+\.(mp3|m4a|aac|ogg|wav|webm|flac)$/;
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+const KEY_PATTERN = /^(tracks\/[0-9a-f-]+\.(mp3|m4a|aac|ogg|wav|webm|flac)|artwork\/[0-9a-f-]+\.(jpg|png|webp))$/;
 
 export function extensionForMime(mime: string): string | null {
   return MIME_EXTENSIONS[mime.toLowerCase()] ?? null;
+}
+
+export function extensionForImageMime(mime: string): string | null {
+  return IMAGE_EXTENSIONS[mime.toLowerCase()] ?? null;
 }
 
 export interface OpenedTrackFile {
@@ -40,6 +50,13 @@ export class TrackStorageService {
     return key;
   }
 
+  async saveArtwork(buffer: Buffer, extension: string): Promise<string> {
+    const key = `artwork/${randomUUID()}.${extension}`;
+    await mkdir(join(this.root, 'artwork'), { recursive: true });
+    await writeFile(join(this.root, key), buffer);
+    return key;
+  }
+
   async open(key: string): Promise<OpenedTrackFile | null> {
     const path = this.resolveKey(key);
     if (!path) return null;
@@ -49,6 +66,11 @@ export class TrackStorageService {
     } catch {
       return null;
     }
+  }
+
+  async openArtwork(key: string): Promise<OpenedTrackFile | null> {
+    if (!key.startsWith('artwork/')) return null;
+    return this.open(key);
   }
 
   async remove(key: string): Promise<void> {
