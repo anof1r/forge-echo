@@ -1,5 +1,5 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
-import { AudioBackend, VoiceHandle } from './audio-backend';
+import { AudioBackend, PlaybackProgress, VoiceHandle } from './audio-backend';
 import { ForgeApi } from './forge-api';
 import { LibraryStore } from './library-store';
 import { Track } from './models';
@@ -21,6 +21,7 @@ export class PlaybackService {
   readonly manual = signal(false);
   readonly masterVolume = signal(1);
   readonly nowPlaying = signal<Track | null>(null);
+  readonly nowPlayingProgress = signal<PlaybackProgress | null>(null);
   readonly paused = signal(false);
 
   private voice: VoiceHandle | null = null;
@@ -82,6 +83,7 @@ export class PlaybackService {
     this.voice = null;
     this.generation += 1;
     this.nowPlaying.set(null);
+    this.nowPlayingProgress.set(null);
     this.paused.set(false);
     this.manual.set(true);
   }
@@ -114,6 +116,7 @@ export class PlaybackService {
   private playAmbient(track: Track, fadeInMs: number, fadeOutMs: number, bindingVolume: number, pauseAfterStart = false): void {
     this.voice?.stop(fadeOutMs);
     const generation = ++this.generation;
+    this.nowPlayingProgress.set(null);
     this.voice = this.backend.play(
       {
         url: this.api.streamUrl(track.id),
@@ -127,6 +130,10 @@ export class PlaybackService {
         if (generation !== this.generation) return;
         this.voice = null;
         this.nowPlaying.set(null);
+        this.nowPlayingProgress.set(null);
+      },
+      (progress) => {
+        if (generation === this.generation) this.nowPlayingProgress.set(progress);
       },
     );
     this.nowPlaying.set(track);

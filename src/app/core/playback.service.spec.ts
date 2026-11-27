@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AudioBackend, PlayRequest, VoiceHandle } from './audio-backend';
+import { AudioBackend, PlaybackProgress, PlayRequest, VoiceHandle } from './audio-backend';
 import { ForgeApi } from './forge-api';
 import { LibraryStore } from './library-store';
 import { Binding, StageState, Track } from './models';
@@ -10,12 +10,17 @@ import { StageStateService } from './stage-state.service';
 class FakeVoice implements VoiceHandle {
   stoppedWith: number | null = null;
   paused = false;
-  constructor(readonly request: PlayRequest, readonly onEnded: () => void) {}
+  constructor(
+    readonly request: PlayRequest,
+    readonly onEnded: () => void,
+    private readonly onProgress?: (progress: PlaybackProgress) => void,
+  ) {}
   stop(fadeOutMs: number): void {
     this.stoppedWith = fadeOutMs;
   }
   pause(): void { this.paused = true; }
   resume(): void { this.paused = false; }
+  reportProgress(progress: PlaybackProgress): void { this.onProgress?.(progress); }
 }
 
 class FakeBackend extends AudioBackend {
@@ -28,8 +33,8 @@ class FakeBackend extends AudioBackend {
   setMasterVolume(volume: number): void {
     this.master = volume;
   }
-  play(request: PlayRequest, onEnded: () => void): VoiceHandle {
-    const voice = new FakeVoice(request, onEnded);
+  play(request: PlayRequest, onEnded: () => void, onProgress?: (progress: PlaybackProgress) => void): VoiceHandle {
+    const voice = new FakeVoice(request, onEnded, onProgress);
     this.voices.push(voice);
     return voice;
   }
@@ -198,6 +203,21 @@ describe('PlaybackService', () => {
     expect(service.paused()).toBe(false);
     expect(service.manual()).toBe(false);
     expect(backend.voices).toHaveLength(1);
+  });
+
+  it('stores playback time and clears it when ambient playback stops', async () => {
+    // Arrange
+    await service.startSession();
+    select('s1');
+
+    // Act
+    backend.voices[0].reportProgress({ positionMs: 65000, durationMs: 190000 });
+    const progress = service.nowPlayingProgress();
+    service.stopAmbient();
+
+    // Assert
+    expect(progress).toEqual({ positionMs: 65000, durationMs: 190000 });
+    expect(service.nowPlayingProgress()).toBeNull();
   });
 
   it('returning to auto switches to the track of the current slide', async () => {

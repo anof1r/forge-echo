@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AudioBackend, PlayRequest, VoiceHandle } from './audio-backend';
+import { AudioBackend, PlaybackProgress, PlayRequest, VoiceHandle } from './audio-backend';
 import { AudioElementPool } from './audio-element-pool';
 import { fadeCurve } from './fade-curve';
 
@@ -39,7 +39,7 @@ export class WebAudioBackend extends AudioBackend {
     if (this.master) this.master.gain.value = volume;
   }
 
-  play(request: PlayRequest, onEnded: () => void): VoiceHandle {
+  play(request: PlayRequest, onEnded: () => void, onProgress?: (progress: PlaybackProgress) => void): VoiceHandle {
     const context = this.ensureContext();
     const slot = (this.pool as AudioElementPool<Slot>).acquire();
     const { element, gain } = slot;
@@ -117,10 +117,20 @@ export class WebAudioBackend extends AudioBackend {
     );
     element.addEventListener('ended', restartOrFinish, options);
     element.addEventListener('error', finish, options);
-    if (request.endMs !== null) {
-      const endSeconds = request.endMs / 1000;
+    if (request.endMs !== null || onProgress) {
+      const endSeconds = request.endMs === null ? null : request.endMs / 1000;
+      let lastProgressAt = 0;
       timer = setInterval(() => {
-        if (element.currentTime >= endSeconds) restartOrFinish();
+        if (endSeconds !== null && element.currentTime >= endSeconds) restartOrFinish();
+        if (!onProgress || finished || !Number.isFinite(element.currentTime)) return;
+        const now = Date.now();
+        if (now - lastProgressAt < 250) return;
+        lastProgressAt = now;
+        const totalEndMs = request.endMs ?? (Number.isFinite(element.duration) ? element.duration * 1000 : null);
+        if (totalEndMs === null || totalEndMs <= request.startMs) return;
+        const durationMs = totalEndMs - request.startMs;
+        const positionMs = Math.min(durationMs, Math.max(0, element.currentTime * 1000 - request.startMs));
+        onProgress({ positionMs, durationMs });
       }, 50);
     }
 

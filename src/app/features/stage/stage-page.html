@@ -49,6 +49,24 @@
         </div>
         <h2 data-test="now-playing">{{ playback.nowPlaying()?.name ?? 'Silence' }}</h2>
         <p class="playback-card__detail">{{ playback.nowPlaying() ? 'Ambient sound' : 'No ambient sound' }}</p>
+        @if (playback.nowPlayingProgress(); as progress) {
+          <div class="playback-card__progress">
+            <div class="playback-card__times" data-test="playback-time">
+              <span>{{ formatPlaybackTime(progress.positionMs) }}</span>
+              <span>{{ formatPlaybackTime(progress.durationMs) }}</span>
+            </div>
+            <div
+              class="playback-card__track"
+              role="progressbar"
+              aria-label="Ambient playback progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="playbackProgressPercent()"
+            >
+              <span data-test="playback-progress-fill" [style.width.%]="playbackProgressPercent()"></span>
+            </div>
+          </div>
+        }
       </article>
     </section>
 

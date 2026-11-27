@@ -8,6 +8,11 @@ export interface PlayRequest {
   pitchSemitones?: number;
 }
 
+export interface PlaybackProgress {
+  positionMs: number;
+  durationMs: number;
+}
+
 export interface VoiceHandle {
   stop(fadeOutMs: number): void;
   pause(): void;
@@ -18,5 +23,5 @@ export interface VoiceHandle {
 export abstract class AudioBackend {
   abstract resume(): Promise<void>;
   abstract setMasterVolume(volume: number): void;
-  abstract play(request: PlayRequest, onEnded: () => void): VoiceHandle;
+  abstract play(request: PlayRequest, onEnded: () => void, onProgress?: (progress: PlaybackProgress) => void): VoiceHandle;
 }

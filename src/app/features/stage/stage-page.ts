@@ -55,6 +55,11 @@ export class StagePage {
     const slide = slides.find((item) => item.id === presentation.activeSlideId);
     return slide ? { name: slide.name, imageUrl: this.api.slideImageUrl(slide) } : null;
   });
+  protected readonly playbackProgressPercent = computed(() => {
+    const progress = this.playback.nowPlayingProgress();
+    if (!progress || progress.durationMs <= 0) return 0;
+    return Math.round((progress.positionMs / progress.durationMs) * 1000) / 10;
+  });
 
   constructor() {
     void this.library.refresh();
@@ -75,5 +80,14 @@ export class StagePage {
 
   protected artworkUrl(track: Track): string | null {
     return this.api.artworkUrl(track);
+  }
+
+  protected formatPlaybackTime(milliseconds: number): string {
+    const totalSeconds = Math.floor(Math.max(0, milliseconds) / 1000);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    const minutes = Math.floor(totalSeconds / 60);
+    if (minutes < 60) return `${minutes}:${seconds}`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}:${String(minutes % 60).padStart(2, '0')}:${seconds}`;
   }
 }

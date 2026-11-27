@@ -18,6 +18,7 @@ describe('StagePage', () => {
     manual: ReturnType<typeof signal<boolean>>;
     masterVolume: ReturnType<typeof signal<number>>;
     paused: ReturnType<typeof signal<boolean>>;
+    nowPlayingProgress: ReturnType<typeof signal<{ positionMs: number; durationMs: number } | null>>;
     nowPlaying: ReturnType<typeof signal<Track | null>>;
     startSession: ReturnType<typeof vi.fn>;
     playManual: ReturnType<typeof vi.fn>;
@@ -49,6 +50,7 @@ describe('StagePage', () => {
       manual: signal(false),
       masterVolume: signal(1),
       paused: signal(false),
+      nowPlayingProgress: signal<{ positionMs: number; durationMs: number } | null>(null),
       nowPlaying: signal<Track | null>(null),
       startSession: vi.fn().mockImplementation(async () => playback.started.set(true)),
       playManual: vi.fn(),
@@ -133,6 +135,20 @@ describe('StagePage', () => {
 
       // Assert
       expect(query('[data-test="now-playing"]').textContent).toContain('Silence');
+    });
+
+    it('shows elapsed time, duration, and progress for the ambient track', () => {
+      // Arrange
+      playback.nowPlaying.set(track('t1'));
+      playback.nowPlayingProgress.set({ positionMs: 65000, durationMs: 190000 });
+
+      // Act
+      render();
+
+      // Assert
+      expect(query('[data-test="playback-time"]').textContent).toContain('1:05');
+      expect(query('[data-test="playback-time"]').textContent).toContain('3:10');
+      expect(query<HTMLElement>('[data-test="playback-progress-fill"]').style.width).toBe('34.2%');
     });
 
     it('shows the playing track and follows scenes by default', () => {

@@ -192,6 +192,35 @@
     color: var(--text-muted);
     font-size: var(--text-sm);
   }
+
+  &__progress {
+    display: grid;
+    gap: var(--space-1);
+    margin-top: var(--space-3);
+  }
+
+  &__times {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__track {
+    height: 0.3rem;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--line);
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 200ms linear;
+    }
+  }
 }
 
 .playing-indicator,
