@@ -2,8 +2,8 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { AudioBackend } from './core/audio-backend';
-import { WebAudioBackend } from './core/web-audio-backend';
+import { AudioBackend } from './core/audio/audio-backend';
+import { WebAudioBackend } from './core/audio/web-audio-backend';
 import { provideServiceWorker } from '@angular/service-worker';
 
 export const appConfig: ApplicationConfig = {

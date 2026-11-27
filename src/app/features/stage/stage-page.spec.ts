@@ -1,10 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ForgeApi } from '../../core/forge-api';
-import { LibraryStore } from '../../core/library-store';
-import { StageState, Track } from '../../core/models';
-import { PlaybackService } from '../../core/playback.service';
-import { StageStateService } from '../../core/stage-state.service';
+import { ForgeApi } from '../../core/data/forge-api';
+import { LibraryStore } from '../../core/data/library-store';
+import { StageState, Track } from '../../core/data/models';
+import { PlaybackService } from '../../core/audio/playback.service';
+import { StageStateService } from '../../core/data/stage-state.service';
 import { StagePage } from './stage-page';
 
 const track = (id: string, overrides: Partial<Track> = {}): Track => ({

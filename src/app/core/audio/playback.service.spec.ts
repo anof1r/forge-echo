@@ -1,11 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AudioBackend, PlaybackProgress, PlayRequest, VoiceHandle } from './audio-backend';
-import { ForgeApi } from './forge-api';
-import { LibraryStore } from './library-store';
-import { Binding, StageState, Track } from './models';
+import { ForgeApi } from '../data/forge-api';
+import { LibraryStore } from '../data/library-store';
+import { Binding, StageState, Track } from '../data/models';
 import { PlaybackService } from './playback.service';
-import { StageStateService } from './stage-state.service';
+import { StageStateService } from '../data/stage-state.service';
 
 class FakeVoice implements VoiceHandle {
   stoppedWith: number | null = null;

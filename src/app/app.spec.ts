@@ -6,8 +6,8 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { App } from './app';
 import { routes } from './app.routes';
-import { AudioBackend } from './core/audio-backend';
-import { STAGE_SOCKET } from './core/stage-state.service';
+import { AudioBackend } from './core/audio/audio-backend';
+import { STAGE_SOCKET } from './core/data/stage-state.service';
 
 const testProviders = [
   provideRouter(routes),

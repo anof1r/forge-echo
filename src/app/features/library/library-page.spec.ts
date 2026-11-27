@@ -1,10 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ForgeApi } from '../../core/forge-api';
-import { LibraryStore } from '../../core/library-store';
-import { Binding, StageState, Track } from '../../core/models';
-import { StageStateService } from '../../core/stage-state.service';
-import { WaveformFactory, WaveformHandlers } from '../../ui/waveform';
+import { ForgeApi } from '../../core/data/forge-api';
+import { LibraryStore } from '../../core/data/library-store';
+import { Binding, StageState, Track } from '../../core/data/models';
+import { StageStateService } from '../../core/data/stage-state.service';
+import { WaveformFactory, WaveformHandlers } from '../../shared/ui/waveform';
 import { LibraryPage } from './library-page';
 
 const track = (id: string, overrides: Partial<Track> = {}): Track => ({

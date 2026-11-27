@@ -1,4 +1,4 @@
-import { Binding, Presentation, Track } from './models';
+import { Binding, Presentation, Track } from '../data/models';
 import { planPlayback } from './playback-planner';
 
 const track = (id: string, overrides: Partial<Track> = {}): Track => ({

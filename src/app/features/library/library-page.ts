@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ForgeApi } from '../../core/forge-api';
-import { LibraryStore } from '../../core/library-store';
-import { BATTLE_BINDING_KEY, Binding, Track, TrackKind } from '../../core/models';
-import { StageStateService } from '../../core/stage-state.service';
-import { TrimChange, TrimEditor } from '../../ui/trim-editor';
+import { ForgeApi } from '../../core/data/forge-api';
+import { LibraryStore } from '../../core/data/library-store';
+import { BATTLE_BINDING_KEY, Binding, Track, TrackKind } from '../../core/data/models';
+import { StageStateService } from '../../core/data/stage-state.service';
+import { TrimChange, TrimEditor } from '../../shared/ui/trim-editor';
 
 interface BindingTarget {
   key: string;

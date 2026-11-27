@@ -1,12 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ForgeApi } from '../../core/forge-api';
-import { LibraryStore } from '../../core/library-store';
-import { OneShotGroup, Track } from '../../core/models';
-import { PlaybackService } from '../../core/playback.service';
-import { StageStateService } from '../../core/stage-state.service';
-import { Icon } from '../../ui/icon';
-import { IntensitySlider } from '../../ui/intensity-slider';
-import { ModeToggle, ToggleOption } from '../../ui/mode-toggle';
+import { ForgeApi } from '../../core/data/forge-api';
+import { LibraryStore } from '../../core/data/library-store';
+import { OneShotGroup, Track } from '../../core/data/models';
+import { PlaybackService } from '../../core/audio/playback.service';
+import { StageStateService } from '../../core/data/stage-state.service';
+import { Icon } from '../../shared/ui/icon';
+import { IntensitySlider } from '../../shared/ui/intensity-slider';
+import { ModeToggle, ToggleOption } from '../../shared/ui/mode-toggle';
 
 @Component({
   selector: 'app-stage-page',

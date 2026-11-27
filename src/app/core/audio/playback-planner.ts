@@ -1,4 +1,4 @@
-import { BATTLE_BINDING_KEY, Binding, Presentation, Track } from './models';
+import { BATTLE_BINDING_KEY, Binding, Presentation, Track } from '../data/models';
 
 export interface PlannerInput {
   presentation: Presentation;

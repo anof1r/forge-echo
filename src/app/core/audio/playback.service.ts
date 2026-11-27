@@ -1,12 +1,12 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { AudioBackend, PlaybackProgress, VoiceHandle } from './audio-backend';
-import { ForgeApi } from './forge-api';
-import { LibraryStore } from './library-store';
-import { Track } from './models';
+import { ForgeApi } from '../data/forge-api';
+import { LibraryStore } from '../data/library-store';
+import { Track } from '../data/models';
 import { planPlayback } from './playback-planner';
 import { OneShotPitchMemory, nextOneShotPitch } from './one-shot-pitch';
 import { perceivedVolumeGain } from './perceived-volume';
-import { StageStateService } from './stage-state.service';
+import { StageStateService } from '../data/stage-state.service';
 
 const MANUAL_FADE_MS = 4000;
 
