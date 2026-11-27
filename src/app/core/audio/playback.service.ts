@@ -40,7 +40,10 @@ export class PlaybackService {
       });
       if (action.type !== 'play') return;
       const track = this.library.tracks().find((item) => item.id === action.trackId);
-      if (track) this.playAmbient(track, action.fadeInMs, action.fadeOutMs, action.volume, this.paused());
+      if (track) {
+        this.paused.set(false);
+        this.playAmbient(track, action.fadeInMs, action.fadeOutMs, action.volume);
+      }
     });
   }
 
@@ -113,7 +116,7 @@ export class PlaybackService {
     this.backend.setMasterVolume(perceivedVolumeGain(clamped));
   }
 
-  private playAmbient(track: Track, fadeInMs: number, fadeOutMs: number, bindingVolume: number, pauseAfterStart = false): void {
+  private playAmbient(track: Track, fadeInMs: number, fadeOutMs: number, bindingVolume: number): void {
     this.voice?.stop(fadeOutMs);
     const generation = ++this.generation;
     this.nowPlayingProgress.set(null);
@@ -137,6 +140,5 @@ export class PlaybackService {
       },
     );
     this.nowPlaying.set(track);
-    if (pauseAfterStart) this.voice?.pause();
   }
 }

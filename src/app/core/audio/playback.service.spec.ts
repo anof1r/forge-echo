@@ -205,6 +205,21 @@ describe('PlaybackService', () => {
     expect(backend.voices).toHaveLength(1);
   });
 
+  it('resumes playback when a new scene selects a different ambient track', async () => {
+    // Arrange
+    await service.startSession();
+    select('s1');
+    service.togglePause();
+
+    // Act
+    select('s2');
+
+    // Assert
+    expect(service.paused()).toBe(false);
+    expect(service.nowPlaying()?.id).toBe('t2');
+    expect(backend.voices[1].paused).toBe(false);
+  });
+
   it('stores playback time and clears it when ambient playback stops', async () => {
     // Arrange
     await service.startSession();
